@@ -791,6 +791,7 @@ class LT3D_scale2_reversed(ThreeDScene_):
         self.wait(7)
 
 
+
 class LT3D_Shift(ThreeDScene_):
     def create_matrix(self, np_matrix):
         mat = mat.Matrix(np_matrix)
@@ -1435,7 +1436,8 @@ class MatrixMatrixMulResult(LinearTransformationScene_):
 
         self.wait()
 
-class MatrixMatrixMulNotSymmetrical(LinearTransformationScene_):
+class MatrixVectorMultiplicationScene(LinearTransformationScene_):
+    """22 Умножение матрицы на вектор: линейная комбинация столбцов"""
     def __init__(self, **kwargs):
         LinearTransformationScene_.__init__(
             self,
@@ -1444,54 +1446,107 @@ class MatrixMatrixMulNotSymmetrical(LinearTransformationScene_):
             show_basis_vectors=True,
             **kwargs
         )
+    
     def construct(self):
-        matrix = [
-            [1, -1],
-            [2, 1]
-        ]
-
-        self.add_vector([1, 1])
-        matrix = np.array(matrix).T
-
-        matrix1_text = m.Matrix(matrix).to_edge(m.UP, buff=1).to_edge(m.LEFT).set_column_colors(m.GREEN, m.RED)
-        self.play(m.Create(matrix1_text), run_time=0.3)
+        # 1. Заголовок
+        title = m.Text("Умножение матрицы на вектор", font_size=36, color=m.BLUE)
+        title.to_edge(m.UP)
+        self.add(title)
+        
+        # 2. Матрица A = [[2, 1], [1, 2]]
+        matrix_data = np.array([[2, 1], [1, 2]])
+        matrix = matrix_data.T  # Транспонируем для правильного отображения
+        
+        # 3. Вектор v = (1.5, 1)
+        v = np.array([1.5, 1])
+        
+        # 4. Добавляем исходный вектор
+        vector_v = self.add_vector(v, color=m.GREEN)
+        vector_label = m.MathTex(r"\vec{v} = \begin{bmatrix} 1.5 \\ 1 \end{bmatrix}", 
+                                 font_size=32, color=m.GREEN)
+        vector_label.next_to(vector_v.get_end(), m.RIGHT, buff=0.3)
+        self.play(m.Write(vector_label), run_time=0.5)
         self.wait()
-
-        self.moving_mobjects = []
-        self.apply_matrix(matrix)
+        
+        # 5. Отображаем матрицу
+        matrix_text = m.Matrix(matrix_data).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+        matrix_text.set_column_colors(m.YELLOW, m.YELLOW)
+        matrix_label = m.MathTex(r"A =", font_size=32).next_to(matrix_text, m.LEFT, buff=0.2)
+        self.play(m.Create(matrix_label), m.Create(matrix_text), run_time=0.5)
         self.wait()
-
-        i1 = m.Matrix([[1], [-1]]).set_column_colors(m.GREEN).move_to(2 * m.RIGHT + 1 * m.DOWN)
-        j1 = m.Matrix([[2], [1]]).set_column_colors(m.RED).move_to(3 * m.RIGHT + 1 * m.UP)
-        self.play(m.Create(i1), m.Create(j1), run_time=0.3)
+        
+        # 6. Показываем формулу умножения как линейную комбинацию столбцов
+        # A * v = 1.5 * (2,1) + 1 * (1,2)
+        formula1 = m.MathTex(
+            r"A \cdot \vec{v} = 1.5 \begin{bmatrix} 2 \\ 1 \end{bmatrix} + 1 \begin{bmatrix} 1 \\ 2 \end{bmatrix}",
+            font_size=32
+        )
+        formula1.next_to(title, m.DOWN, buff=0.5).to_edge(m.RIGHT)
+        self.play(m.Write(formula1), run_time=1)
+        self.wait()
+        
+        # 7. Показываем векторы-столбцы матрицы
+        col1 = np.array([matrix_data[0, 0], matrix_data[1, 0]])  # (2,1)
+        col2 = np.array([matrix_data[0, 1], matrix_data[1, 1]])  # (1,2)
+        
+        arrow_col1 = self.add_vector(col1, color=m.YELLOW)
+        arrow_col2 = self.add_vector(col2, color=m.YELLOW)
+        
+        col1_label = m.MathTex(r"\begin{bmatrix} 2 \\ 1 \end{bmatrix}", font_size=28, color=m.YELLOW)
+        col1_label.next_to(arrow_col1.get_end(), m.RIGHT, buff=0.2)
+        col2_label = m.MathTex(r"\begin{bmatrix} 1 \\ 2 \end{bmatrix}", font_size=28, color=m.YELLOW)
+        col2_label.next_to(arrow_col2.get_end(), m.RIGHT, buff=0.2)
+        
+        self.play(m.Write(col1_label), m.Write(col2_label), run_time=0.5)
+        self.wait()
+        
+        # 8. Применяем матричное преобразование к вектору
+        self.moving_mobjects = []  # Очищаем движущиеся объекты
+        self.apply_matrix(matrix_data)  # Применяем матрицу ко всей сцене
+        
+        # 9. После преобразования, показываем результирующий вектор
+        result = matrix_data @ v  # (2, 3.5)
+        result_vector = self.add_vector(result, color=m.RED)
+        
+        result_label = m.MathTex(
+            r"\vec{w} = A \cdot \vec{v} = \begin{bmatrix} 2 \\ 3.5 \end{bmatrix}",
+            font_size=32, color=m.RED
+        )
+        result_label.next_to(result_vector.get_end(), m.RIGHT, buff=0.3)
+        self.play(m.Write(result_label), run_time=1)
+        self.wait()
+        
+        # 10. Обновляем формулу с результатом
+        formula2 = m.MathTex(
+            r"A \cdot \vec{v} = \begin{bmatrix} 2 \\ 3.5 \end{bmatrix}",
+            font_size=32
+        )
+        formula2.next_to(title, m.DOWN, buff=0.5).to_edge(m.RIGHT)
+        self.play(m.Transform(formula1, formula2), run_time=1)
+        self.wait()
+        
+        # 11. Показываем, как столбцы масштабируются коэффициентами вектора
+        scaled_col1 = v[0] * col1  # 1.5 * (2,1) = (3, 1.5)
+        scaled_col2 = v[1] * col2  # 1 * (1,2) = (1, 2)
+        
+        arrow_scaled1 = self.add_vector(scaled_col1, color=m.PURPLE, opacity=0.7)
+        arrow_scaled2 = self.add_vector(scaled_col2, color=m.PURPLE, opacity=0.7)
+        
+        # Показываем их сумму (правило параллелограмма)
+        sum_vector = arrow_scaled1.copy()
+        self.play(
+            m.Transform(arrow_scaled1.copy(), result_vector),
+            run_time=2
+        )
+        
+        # 12. Финальное объяснение
+        explanation = m.Text(
+            "Умножение матрицы на вектор = линейная комбинация столбцов",
+            font_size=28, color=m.YELLOW
+        ).to_edge(m.DOWN, buff=1)
+        self.play(m.Write(explanation), run_time=1)
+        
         self.wait(3)
-        self.play(m.Uncreate(i1), m.Uncreate(j1), run_time=0.3)
-
-        matrix = [
-            [1, -1],
-            [1, 0.5]
-        ]
-
-        matrix = np.array(matrix).T
-
-        matrix2_text = m.Matrix(matrix).to_edge(m.UP, buff=1).to_edge(m.LEFT)
-        times = m.Tex(r"$\times$").next_to(matrix2_text, m.RIGHT)
-        self.play(matrix1_text.animate.next_to(times, m.RIGHT))
-        self.play(m.Create(matrix2_text), run_time=0.3)
-        self.play(m.Create(times), run_time=0.3)
-        self.wait(2)
-
-        self.apply_matrix(matrix)
-
-        i1 = m.Matrix([[0.0], [-1.0]]).set_column_colors(m.GREEN).move_to(1 * m.LEFT + 1 * m.DOWN)
-        j1 = m.Matrix([[3.0], [-1.0]]).set_column_colors(m.RED).move_to(4 * m.RIGHT + 1 * m.DOWN)
-        self.play(m.Create(i1), m.Create(j1), run_time=0.3)
-
-        eq = m.Text("=").next_to(matrix1_text, m.RIGHT)
-        matrix3_text = m.Matrix([[0.0, 3.0], [-1.0, -1.0]]).next_to(eq, m.RIGHT).set_column_colors(m.GREEN, m.RED)
-        self.play(m.Create(eq), m.Create(matrix3_text), run_time=0.3)
-
-        self.wait()
 
 class LUDdecomposition(m.Scene):
     def construct(self):
@@ -1630,25 +1685,3072 @@ class LUDdecomposition(m.Scene):
         # Финальная задержка
         self.wait(2)
 
+class MatrixDeterminantScene(LinearTransformationScene_):
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=True,
+            **kwargs
+        )
+
+    def construct(self):
+        self.remove(self.plane)
+        self.plane = m.NumberPlane(
+            x_range=[-4, 4, 1], y_range=[-4, 4, 1],
+            background_line_style={"stroke_color": m.GRAY_E, "stroke_width": 1}
+        )
+        self.add(self.plane)
+        self.add_transformable_mobject(self.plane)
+
+        title = m.Text("Геометрический смысл определителя", font_size=32).to_edge(m.UP)
+        self.add(title)
+
+        A1 = np.array([[2, 1], [1, 2]])
+        det1 = 3.0
+
+        m1_tex = m.Matrix(A1).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+        self.play(m.Create(m1_tex), run_time=0.5)
+
+        det1_eq = m.MathTex(r"\det(A_1) = 2 \cdot 2 - 1 \cdot 1 = 3").next_to(m1_tex, m.RIGHT, buff=0.5)
+        det1_eq.set_color(m.DARK_GRAY)
+        self.play(m.Write(det1_eq), run_time=0.5)
+        self.wait(0.5)
+
+        unit_sq1 = m.Polygon(
+            [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+            fill_color=m.PURPLE, fill_opacity=0.4, stroke_color=m.PURPLE, stroke_width=2
+        )
+        self.add(unit_sq1)
+        self.add_transformable_mobject(unit_sq1)
+        self.wait(0.5)
+
+        self.apply_matrix(A1)
+        self.wait(0.5)
+
+        area1 = m.Text(f"Площадь = {det1:.0f}", font_size=28).next_to(det1_eq, m.DOWN, buff=0.3)
+        area1.set_color(m.PURPLE)
+        self.play(m.Write(area1), run_time=0.5)
+        self.wait(1.5)
+
+        self.play(
+            m.FadeOut(unit_sq1), m.FadeOut(area1),
+            m.FadeOut(det1_eq), m.FadeOut(m1_tex),
+            run_time=0.5
+        )
+
+        self.remove(self.plane)
+        self.plane = m.NumberPlane(
+            x_range=[-4, 4, 1], y_range=[-4, 4, 1],
+            background_line_style={"stroke_color": m.GRAY_E, "stroke_width": 1}
+        )
+        self.add(self.plane)
+        self.add_transformable_mobject(self.plane)
+        self.wait(0.3)
+
+        A2 = np.array([[0, 1], [1, 0]])
+        det2 = -1.0
+
+        m2_tex = m.Matrix(A2).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+        self.play(m.Create(m2_tex), run_time=0.5)
+
+        det2_eq = m.MathTex(r"\det(A_2) = 0 \cdot 0 - 1 \cdot 1 = -1").next_to(m2_tex, m.RIGHT, buff=0.5)
+        det2_eq.set_color(m.DARK_GRAY)
+        self.play(m.Write(det2_eq), run_time=0.5)
+        self.wait(0.5)
+
+        unit_sq2 = m.Polygon(
+            [0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 1, 0],
+            fill_color=m.PURPLE, fill_opacity=0.4, stroke_color=m.PURPLE, stroke_width=2
+        )
+        self.add(unit_sq2)
+        self.add_transformable_mobject(unit_sq2)
+        self.wait(0.5)
+
+        self.apply_matrix(A2)
+        self.wait(0.5)
+
+        area2 = m.Text(f"Площадь = |{det2:.0f}| = 1  (смена ориентации)", font_size=24).next_to(det2_eq, m.DOWN, buff=0.3)
+        area2.set_color(m.PURPLE)
+        self.play(m.Write(area2), run_time=0.5)
+        self.wait(1.5)
+
+        conclusion = m.Text(
+            "Определитель = коэффициент масштабирования площади\n(знак указывает на ориентацию базиса)",
+            font_size=26, color=m.DARK_GRAY
+        ).to_edge(m.DOWN)
+        self.play(m.Write(conclusion), run_time=1)
+        self.wait(2)
+
+class DegenerateVolume3D(ThreeDScene_):
+    '''Трёхмерное пространство. Три вектора-столбца матрицы A выходят из начала координат. Поскольку они
+линейно зависимы, все три лежат в одной плоскости — параллелепипед вырожден, объём равен нулю. Плоскость, в
+которой лежат все три вектора, подсвечена полупрозрачным цветом. '''
+    def construct(self):
+        # Настройка цветов по гайду
+        self.basis_color = m.PURPLE
+        self.axis_color = m.GRAY
+        self.text_color = m.DARK_GRAY
+
+        # Матрица с линейно зависимыми столбцами
+        M = np.array([
+            [2.0, 0.0, 2.0],
+            [0.0, 2.0, 2.0],
+            [1.0, 1.0, 2.0]
+        ])
+
+        # Оси координат и подписи
+        axes = m.ThreeDAxes(x_range=[-3, 3], y_range=[-3, 3], z_range=[-3, 3])
+        axes.set_color(self.axis_color)
+        axes.add(axes.get_axis_labels())
+        self.add(axes)
+
+        # Камера и автоматическое вращение
+        self.set_camera_orientation(phi=75 * m.DEGREES, theta=-45 * m.DEGREES)
+        self.begin_ambient_camera_rotation(rate=0.15)
+
+        # Извлечение векторов-столбцов
+        v1, v2, v3 = M[:, 0], M[:, 1], M[:, 2]
+
+        # Плоскость, натянутая на первые два вектора
+        plane = m.Surface(
+            lambda u, v: u * v1 + v * v2,
+            u_range=[-1.4, 1.4], v_range=[-1.4, 1.4],
+            resolution=(12, 12)
+        )
+        plane.set_fill(self.basis_color, opacity=0.15)
+        plane.set_stroke(self.basis_color, width=2, opacity=0.5)
+        plane.set_shade_in_3d(True)
+
+        # 3D-стрелки (без явного указания tip_length для совместимости)
+        # Arrow3D гарантирует, что стержень и наконечник всегда соединены геометрически
+        vec1 = m.Arrow3D(start=m.ORIGIN, end=v1, color=self.basis_color)
+        vec2 = m.Arrow3D(start=m.ORIGIN, end=v2, color=self.basis_color)
+        vec3 = m.Arrow3D(start=m.ORIGIN, end=v3, color=self.basis_color)
+
+        # Анимация появления плоскости и векторов
+        self.play(
+            m.FadeIn(plane, run_time=1.5),
+            m.Create(vec1, run_time=0.5),
+            m.Create(vec2, run_time=0.5),
+            m.Create(vec3, run_time=0.5)
+        )
+        self.wait(1)
+
+        # Матрица на сцене (зафиксирована в 2D-пространстве камеры)
+        mat = m.Matrix(M).scale(0.75)
+        mat.set_column_colors(self.basis_color, self.basis_color, self.basis_color)
+        mat.to_corner(m.UP + m.LEFT, buff=0.5)
+        mat.shift(m.DOWN * 0.5)
+        self.add_fixed_in_frame_mobjects(mat)
+        self.play(m.Create(mat, run_time=0.5))
+
+        # Подписи временно отключены
+        self.wait(4)
+
+class MatrixDeterminantGeometry(LinearTransformationScene_):
+    """
+    Геометрический смысл определителя
+    
+    Иллюстрация концепции:
+    1. Столбцы матрицы A — это два вектора на плоскости.
+    2. Модуль определителя |det(A)| равен площади параллелограмма, 
+       построенного на этих векторах.
+    3. Знак определителя показывает ориентацию:
+       - det > 0: сохраняется «правая» ориентация (зелёный вектор → красный против часовой)
+       - det < 0: ориентация меняется на «левую» (зелёный вектор → красный по часовой)
+    """
+
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # Хелпер для создания сплошных белых подложек
+        def add_white_bg(mob):
+            bg = m.BackgroundRectangle(mob, fill_color="#FFFFFF", fill_opacity=0.8, stroke_width=0)
+            self.add(bg)
+            return bg
+
+        # --- Пример 1: Положительный определитель ---
+        A = np.array([[3, 1], [0, 2]])
+        v1, v2 = [3.0, 0.0], [1.0, 2.0]  # Явные списки для избежания numpy-конфликтов в Polygon
+
+        mat_A = m.Matrix(A).to_edge(m.UP, buff=1).to_edge(m.LEFT).set_column_colors(m.GREEN, m.RED)
+        bg_mat_A = add_white_bg(mat_A)
+        self.play(m.Create(mat_A), run_time=0.5)
+
+        # 1. Показываем векторы
+        arrow1 = m.Vector(v1, color=m.GREEN)
+        arrow2 = m.Vector(v2, color=m.RED)
+        self.play(m.GrowArrow(arrow1), m.GrowArrow(arrow2), run_time=1)
+        self.wait(0.5)
+
+        # 2. Строим параллелограмм (точки как стандартные списки)
+        poly_A_points = [
+            [0, 0, 0],
+            [v1[0], v1[1], 0],
+            [v1[0] + v2[0], v1[1] + v2[1], 0],
+            [v2[0], v2[1], 0]
+        ]
+        parallelogram_A = m.Polygon(
+            *poly_A_points,
+            fill_color=m.PURPLE, 
+            fill_opacity=0.3, 
+            stroke_color=m.PURPLE, 
+            stroke_width=2
+        )
+        self.play(m.Create(parallelogram_A), run_time=1)
+        self.wait(1)
+
+        # 3. Вычисляем определитель и площадь (логичный вывод после геометрии)
+        det_text_A = m.MathTex(r"\det(A) = 3 \cdot 2 - 1 \cdot 0 = 6", font_size=26).next_to(mat_A, m.DOWN, buff=0.5)
+        det_text_A.set_color(m.DARK_GRAY)
+        bg_det_A = add_white_bg(det_text_A)
+        self.play(m.Write(det_text_A), run_time=0.5)
+
+        area_text_A = m.Text("Площадь = 6", font_size=22).next_to(det_text_A, m.DOWN, buff=0.2)
+        area_text_A.set_color(m.DARK_GRAY)
+        bg_area_A = add_white_bg(area_text_A)
+        self.play(m.Write(area_text_A), run_time=0.5)
+        self.wait(2)
+
+        # Очистка
+        self.play(
+            m.FadeOut(mat_A), m.FadeOut(bg_mat_A),
+            m.FadeOut(det_text_A), m.FadeOut(bg_det_A),
+            m.FadeOut(area_text_A), m.FadeOut(bg_area_A),
+            m.FadeOut(arrow1), m.FadeOut(arrow2), m.FadeOut(parallelogram_A)
+        )
+        self.wait(0.5)
+
+        # --- Пример 2: Отрицательный определитель ---
+        B = np.array([[1, 2], [2, 1]])
+        v1_b, v2_b = [1.0, 2.0], [2.0, 1.0]
+
+        mat_B = m.Matrix(B).to_edge(m.UP, buff=1).to_edge(m.LEFT).set_column_colors(m.GREEN, m.RED)
+        bg_mat_B = add_white_bg(mat_B)
+        self.play(m.Create(mat_B), run_time=0.5)
+
+        arrow1_b = m.Vector(v1_b, color=m.GREEN)
+        arrow2_b = m.Vector(v2_b, color=m.RED)
+        self.play(m.GrowArrow(arrow1_b), m.GrowArrow(arrow2_b), run_time=1)
+        self.wait(0.5)
+
+        poly_B_points = [
+            [0, 0, 0],
+            [v1_b[0], v1_b[1], 0],
+            [v1_b[0] + v2_b[0], v1_b[1] + v2_b[1], 0],
+            [v2_b[0], v2_b[1], 0]
+        ]
+        parallelogram_B = m.Polygon(
+            *poly_B_points,
+            fill_color=m.PURPLE, 
+            fill_opacity=0.3, 
+            stroke_color=m.PURPLE, 
+            stroke_width=2
+        )
+        self.play(m.Create(parallelogram_B), run_time=1)
+        self.wait(1)
+
+        det_text_B = m.MathTex(r"\det(B) = 1 \cdot 1 - 2 \cdot 2 = -3", font_size=26).next_to(mat_B, m.DOWN, buff=0.5)
+        det_text_B.set_color(m.DARK_GRAY)
+        bg_det_B = add_white_bg(det_text_B)
+        self.play(m.Write(det_text_B), run_time=0.5)
+
+        area_text_B = m.Text("Площадь = 3", font_size=22).next_to(det_text_B, m.DOWN, buff=0.2)
+        area_text_B.set_color(m.DARK_GRAY)
+        bg_area_B = add_white_bg(area_text_B)
+        self.play(m.Write(area_text_B), run_time=0.5)
+        self.wait(3)
+
+
+
+class DeterminantVolumeScaling3D(ThreeDScene_):
+    """
+    Определитель как масштабный коэффициент преобразования (3D)
+    
+    Иллюстрация концепции:
+    1. Матрица A задаёт линейное преобразование пространства.
+    2. Единичный куб (объём = 1) превращается в параллелепипед.
+    3. Объём полученного параллелепипеда равен модулю определителя |det(A)|.
+    4. Визуализируются три вектора-столбца матрицы как рёбра параллелепипеда.
+    """
+    def __init__(self, **kwargs):
+        ThreeDScene_.__init__(self, **kwargs)
+
+    def construct(self):
+        # Цветовая схема столбцов как в LT3D
+        self.basis_i_color = m.GREEN
+        self.basis_j_color = m.RED
+        self.basis_k_color = m.GOLD
+
+        # Матрица преобразования (det = 6)
+        A = np.array([
+            [2, 1, 0],
+            [1, 2, 0],
+            [0, 0, 2]
+        ])
+        det_val = int(np.round(np.linalg.det(A)))
+
+        # Оси и камера (стандартная настройка из LT3D)
+        axes = m.ThreeDAxes(x_range=[-2, 5], y_range=[-2, 5], z_range=[-2, 5])
+        axes.set_color(m.GRAY)
+        axes.add(axes.get_axis_labels())
+        self.add(axes)
+
+        self.set_camera_orientation(phi=75 * m.DEGREES, theta=-45 * m.DEGREES)
+        self.begin_ambient_camera_rotation(rate=0.15)
+
+        # Единичный куб (вершины от 0 до 1 по всем осям)
+        cube = m.Cube(
+            side_length=1, 
+            fill_color=m.BLUE, 
+            fill_opacity=0.15, 
+            stroke_color=m.BLUE_E, 
+            stroke_width=1.5
+        )
+        cube.shift(0.5 * (m.RIGHT + m.UP + m.OUT))
+        self.play(m.Create(cube), run_time=1)
+        self.wait(0.5)
+
+        # Матрица на экране (зафиксирована в 2D)
+        mat = m.Matrix(A).scale(0.75)
+        mat.set_column_colors(self.basis_i_color, self.basis_j_color, self.basis_k_color)
+        mat.to_corner(m.UP + m.LEFT, buff=0.5)
+        self.add_fixed_in_frame_mobjects(mat)
+        self.play(m.Create(mat), run_time=0.5)
+        self.wait(0.5)
+
+        # Преобразование куба матрицей (нативный метод, без артефактов проекции)
+        self.play(m.ApplyMatrix(A, cube), run_time=2)
+        self.wait(1)
+
+        # Векторы-столбцы матрицы (рёбра полученного параллелепипеда)
+        v1, v2, v3 = A[:, 0], A[:, 1], A[:, 2]
+        vec1 = m.Arrow3D(start=m.ORIGIN, end=v1, color=self.basis_i_color)
+        vec2 = m.Arrow3D(start=m.ORIGIN, end=v2, color=self.basis_j_color)
+        vec3 = m.Arrow3D(start=m.ORIGIN, end=v3, color=self.basis_k_color)
+
+        self.play(
+            m.Create(vec1, run_time=0.4),
+            m.Create(vec2, run_time=0.4),
+            m.Create(vec3, run_time=0.4)
+        )
+        self.wait(1)
+
+        # Итоговая формула (разделена для совместимости с LaTeX)
+        formula_math = m.MathTex(r"|\det(A)|", "=", str(det_val)).scale(0.8)
+        formula_text = m.Text("= объём параллелепипеда", font_size=24, color=m.DARK_GRAY)
+        formula = m.VGroup(formula_math, formula_text).arrange(m.RIGHT, buff=0.2)
+        formula.to_corner(m.DOWN, buff=0.5)
+        self.add_fixed_in_frame_mobjects(formula)
+        self.play(m.Write(formula), run_time=0.5)
+        self.wait(3)
+
+
+
+class DeterminantVolumeScale(m.ThreeDScene):
+    # определитель трехмерной матрицы как объем параллелепипеда на ее векторах
+    def create_matrix(self, np_matrix):
+        mat = m.Matrix(np_matrix)
+        mat.scale(0.75)
+        
+        # Исправление: Явно красим скобки в черный, чтобы они были видны на белом фоне
+        if hasattr(mat, 'get_brackets'):
+            mat.get_brackets().set_color(m.BLACK)
+            
+        # Применение цветов к столбцам (если метод доступен)
+        if hasattr(mat, 'set_column_colors'):
+            mat.set_column_colors(self.basis_i_color, self.basis_j_color, self.basis_k_color)
+        mat.to_corner(m.UP + m.LEFT, buff=0.5)
+        return mat
+
+    def construct(self):
+        # Установка белого фона
+        self.camera.background_color = m.WHITE
+        
+        # Определение цветов
+        self.basis_i_color = m.GREEN
+        self.basis_j_color = m.RED
+        self.basis_k_color = m.GOLD
+        self.text_color = m.DARK_GRAY  # Серый цвет для текста
+
+        # Матрица преобразования: 
+        # Включает наклон (shear), чтобы показать параллелепипед, а не просто кубоид.
+        # Определитель = 2 * 1 * 1.5 = 3.
+        Mat = np.array([
+            [2, 0, 0],
+            [1, 1, 0],
+            [0, 0, 1.5]
+        ])
+
+        # Начальная матрица (единичная)
+        Id = np.eye(3)
+
+        # Настройка 3D осей
+        axes = m.ThreeDAxes()
+        axes.set_color(m.GRAY)
+        
+        # Ориентация камеры
+        self.set_camera_orientation(phi=75 * m.DEGREES, theta=-45 * m.DEGREES)
+
+        # Текстовые обозначения базисных векторов
+        basis_vector_helper = m.Tex(r"$\hat{i}$", r",", r"$\hat{j}$", r",", r"$\hat{k}$", color=self.text_color)
+        basis_vector_helper[0].set_color(self.basis_i_color)
+        basis_vector_helper[2].set_color(self.basis_j_color)
+        basis_vector_helper[4].set_color(self.basis_k_color)
+        basis_vector_helper.to_corner(m.UP + m.RIGHT)
+        self.add_fixed_in_frame_mobjects(basis_vector_helper)
+
+        # Создание матриц (начальной и конечной)
+        matrix_initial = self.create_matrix(Id)
+        matrix_final = self.create_matrix(Mat)
+        
+        self.add_fixed_in_frame_mobjects(matrix_initial)
+
+        self.add(axes)
+        self.begin_ambient_camera_rotation(rate=0.1)
+
+        # Создание куба (единичный объем)
+        cube = m.Cube(side_length=1, fill_color=m.BLUE, stroke_width=2, fill_opacity=0.2)
+        # Сдвигаем куб так, чтобы его угол был в (0,0,0), а ребра совпадали с осями
+        cube.shift(m.RIGHT * 0.5 + m.UP * 0.5 + m.OUT * 0.5) 
+        cube.set_stroke(m.BLUE)
+
+        # Исходные векторы
+        i_vec = m.Vector(np.array([1, 0, 0]), color=self.basis_i_color)
+        j_vec = m.Vector(np.array([0, 1, 0]), color=self.basis_j_color)
+        k_vec = m.Vector(np.array([0, 0, 1]), color=self.basis_k_color)
+
+        # Трансформированные векторы
+        i_vec_new = m.Vector(Mat @ np.array([1, 0, 0]), color=self.basis_i_color)
+        j_vec_new = m.Vector(Mat @ np.array([0, 1, 0]), color=self.basis_j_color)
+        k_vec_new = m.Vector(Mat @ np.array([0, 0, 1]), color=self.basis_k_color)
+
+        # --- НАСТРОЙКА ТЕКСТА ---
+        # Текст "Объём = 1": чуть меньше (0.8) и сдвинут выше/правее
+        vol_text = m.Text("Объём = 1", color=self.text_color).scale(0.7)
+        vol_text.next_to(cube, m.UP + m.RIGHT).shift(m.UP * 0.3 + m.RIGHT * 0.3)
+        self.add_fixed_in_frame_mobjects(vol_text)
+
+        # Текст "Объём = 3": еще меньше (0.7) и сдвинут выше/правее
+        new_vol_text = m.Text("Объём = 3", color=self.text_color).scale(0.7)
+        new_vol_text.next_to(cube, m.UP + m.RIGHT).shift(m.UP * 0.5 + m.RIGHT * 0.5)
+        #self.add_fixed_in_frame_mobjects(new_vol_text)
+
+        # Текст определителя
+        det_info = m.Tex(r"$|\det(A)| = 3$", color=self.text_color).scale(0.8)
+        det_info.next_to(new_vol_text, m.DOWN)
+        #self.add_fixed_in_frame_mobjects(det_info)
+
+        # Анимация появления куба и векторов
+        self.play(
+            m.Create(cube),
+            m.GrowArrow(i_vec),
+            m.GrowArrow(j_vec),
+            m.GrowArrow(k_vec),
+            m.Write(basis_vector_helper),
+            m.Write(matrix_initial),
+            m.Write(vol_text)
+        )
+
+        self.wait()
+
+        # Анимация трансформации (куб, векторы, матрица)
+        matrix_anim = m.ApplyMatrix(Mat, cube)
+
+        self.play(
+            matrix_anim,
+            m.Transform(i_vec, i_vec_new, rate_func=matrix_anim.get_rate_func(), run_time=matrix_anim.get_run_time()),
+            m.Transform(j_vec, j_vec_new, rate_func=matrix_anim.get_rate_func(), run_time=matrix_anim.get_run_time()),
+            m.Transform(k_vec, k_vec_new, rate_func=matrix_anim.get_rate_func(), run_time=matrix_anim.get_run_time()),
+            m.Transform(matrix_initial, matrix_final), 
+            run_time=2.5
+        )
+
+        # Последовательное обновление текста:
+        # 1. Исчезает "Объём = 1"
+        self.play(m.FadeOut(vol_text, shift=m.UP), run_time=0.5)
+        self.add_fixed_in_frame_mobjects(new_vol_text)
+        self.add_fixed_in_frame_mobjects(det_info)
+        # 2. Появляются "Объём = 3" и формула
+        self.play(
+            m.FadeIn(new_vol_text, shift=m.DOWN),
+            m.FadeIn(det_info, shift=m.DOWN),
+            run_time=0.8
+        )
+        self.wait(2)
+
+
+class MatrixVectorMult(LinearTransformationScene_):
+    '''рисуется 2D матрица в виде параллелепипеда. Матрица выводится на экран. Рисуется вектор. Выводится
+вектор, показывается что он умножается на матрицу. Анимируется умножение матрицы на вектор. Результирующий вектор
+показывается в формуле'''
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,  # Отключаем стандартный базис, чтобы не дублировался
+            **kwargs
+        )
+
+    def construct(self):
+        # 1. Подготовка данных
+        mat_A = np.array([[1.5, 0.5], [-0.3, 2.5]])
+        vec_x_2d = np.array([2, 1.5])
+        
+        # Столбцы матрицы (новые базисные векторы) в 3D
+        col1 = np.append(mat_A[:, 0], 0)  # [1.5, -0.3, 0]
+        col2 = np.append(mat_A[:, 1], 0)  # [0.5, 2.5, 0]
+        
+        # Результаты вычислений
+        res_vec_3d = np.append(mat_A @ vec_x_2d, 0)
+        vec_x_3d = np.append(vec_x_2d, 0)
+
+        # Цветовая схема
+        C_COL1 = m.GREEN
+        C_COL2 = m.RED
+        C_VEC  = m.PURPLE
+
+        # --- ШАГ 1: Параллелограмм, векторы и матрица (появляются параллельно) ---
+        
+        # Два базисных вектора
+        arrow_c1 = m.Arrow(m.ORIGIN, col1, color=C_COL1, buff=0)
+        arrow_c2 = m.Arrow(m.ORIGIN, col2, color=C_COL2, buff=0)
+        
+        # Параллелограмм (полупрозрачный, чтобы векторы оставались сверху)
+        parallelogram = m.Polygon(
+            m.ORIGIN, col1.tolist(), (col1 + col2).tolist(), col2.tolist(),
+            fill_color=m.GRAY, fill_opacity=0.2, stroke_color=m.DARK_GRAY, stroke_width=2
+        )
+        
+        # Матрица с раскрашенными столбцами
+        matrix_tex = m.Matrix(
+            mat_A,
+            element_to_mobject_config={"color": m.BLACK}
+        ).scale(1).to_edge(m.UP, buff=1).to_edge(m.LEFT, buff=0.5)
+        matrix_tex.get_columns()[0].set_color(C_COL1)
+        matrix_tex.get_columns()[1].set_color(C_COL2)
+
+        # Анимируем одновременное появление
+        self.play(
+            m.GrowArrow(arrow_c1),
+            m.GrowArrow(arrow_c2),
+            m.Create(parallelogram),
+            m.Create(matrix_tex),
+            run_time=2
+        )
+        self.wait(0.5)
+
+        # --- ШАГ 2: Исходный вектор x ---
+        arrow_x = m.Vector(vec_x_3d.tolist(), color=C_VEC, buff=0)
+        self.play(m.GrowArrow(arrow_x), run_time=1)
+        self.wait(0.5)
+
+        # --- ШАГ 3: Анимация умножения (Линейная комбинация) ---
+        # Убираем геометрию, чтобы освободить место для формул
+        self.play(
+            m.FadeOut(parallelogram),
+            m.FadeOut(arrow_c1),
+            m.FadeOut(arrow_c2),
+            m.FadeOut(arrow_x),
+            run_time=0.5
+        )
+
+        # Компонент 1: 2 * col1 (Зелёный)
+        # Размещаем строго слева под матрицей
+        comp1_end = (2 * col1).tolist()
+        comp1 = m.Arrow(m.ORIGIN, comp1_end, color=C_COL1, buff=0)
+        comp1_label = m.MathTex(
+            r"2 \cdot \begin{bmatrix} 1.5 \\ -0.3 \end{bmatrix}", 
+            color=C_COL1
+        ).to_edge(m.LEFT, buff=0.5).shift(m.DOWN * 2)
+        
+        self.play(m.GrowArrow(comp1), m.Write(comp1_label), run_time=1.5)
+        self.wait(0.5)
+        
+        # Компонент 2: 1.5 * col2 (Красный)
+        comp2_start = comp1_end
+        comp2_end = (comp1_end + 1.5 * col2).tolist()
+        comp2 = m.Arrow(comp2_start, comp2_end, color=C_COL2, buff=0)
+        comp2_label = m.MathTex(
+            r"+ 1.5 \cdot \begin{bmatrix} 0.5 \\ 2.5 \end{bmatrix}", 
+            color=C_COL2
+        ).next_to(comp1_label, m.RIGHT, buff=0.4)
+        
+        self.play(m.GrowArrow(comp2), m.Write(comp2_label), run_time=1.5)
+        self.wait(0.5)
+        
+        # --- ШАГ 4: Итоговый вектор и формула ---
+        # Всё остаётся выровненным по левому краю
+        res_arrow = m.Arrow(m.ORIGIN, res_vec_3d.tolist(), color=C_VEC, buff=0)
+        res_label = m.MathTex(
+            r"= \vec{x}' = \begin{bmatrix} 3.75 \\ 3.15 \end{bmatrix}", 
+            color=m.BLACK
+        ).next_to(comp2_label, m.RIGHT, buff=0.4)
+        
+        self.play(
+            m.Create(res_arrow),
+            m.Write(res_label),
+            run_time=1.5
+        )
+        self.wait(2)
+
+class RotationPlane2D(LinearTransformationScene_):
+    """Анимация матрицы поворота на 30 и -45 градусов"""
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # Фиолетовый вектор строго на оси X
+        v_start = np.array([3, 0, 0])
+        self.add_vector(v_start, color=m.PURPLE)
+        self.wait(0.5)
+
+        # Вспомогательная функция для создания матрицы
+        def create_rot_matrix(c_val, s_val, angle_deg, symbolic=False):
+            if symbolic:
+                c_txt = rf"\cos({angle_deg}^\circ)"
+                s_txt = rf"\sin({angle_deg}^\circ)"
+                row1 = [c_txt, rf"-{s_txt}"]
+                row2 = [s_txt, c_txt]
+            else:
+                c_txt = f"{c_val:.2f}"
+                neg_s_txt = f"{-s_val:.2f}"
+                s_txt = f"{s_val:.2f}"
+                row1 = [c_txt, neg_s_txt]
+                row2 = [s_txt, c_txt]
+
+            mat = m.Matrix(
+                [row1, row2],
+                element_to_mobject_config={"font_size": 32, "color": m.DARK_GRAY}
+            )
+            cols = mat.get_columns()
+            cols[0].shift(m.LEFT * 0.25)
+            cols[1].shift(m.RIGHT * 0.25)
+            mat.scale(1.1).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+            return mat
+
+        #  ПОВОРОТ НА +30 ГРАДУСОВ 
+        angle_1 = 30
+        rad_1 = np.deg2rad(angle_1)
+        c1, s1 = np.cos(rad_1), np.sin(rad_1)
+
+        mat_sym = create_rot_matrix(c1, s1, angle_1, symbolic=True)
+        self.play(m.Write(mat_sym), run_time=1)
+
+        mat_num = create_rot_matrix(c1, s1, angle_1, symbolic=False)
+        mat_num.move_to(mat_sym)
+        self.play(m.Transform(mat_sym, mat_num), run_time=1)
+        self.wait(0.2)
+
+        rot_mat_1 = np.array([[c1, -s1], [s1, c1]])
+        self.apply_matrix(rot_mat_1)
+        self.wait(0.6)
+
+        # ПОКАЗЫВАЕМ ДУГУ
+        arc_1 = m.Arc(radius=1.5, start_angle=0, angle=rad_1, color=m.ORANGE, stroke_width=4)
+        label_1 = m.MathTex("30^\\circ", font_size=36)
+        mid_angle = rad_1 / 2
+        label_distance = 1.8
+        label_1.move_to([label_distance * np.cos(mid_angle), label_distance * np.sin(mid_angle), 0])
+        
+        self.play(m.Create(arc_1), m.Write(label_1), run_time=0.6)
+        self.wait(1.5)
+        
+        #  УДАЛЕНИЕ ДУГИ И ПОДГОТОВКА К СЛЕДУЮЩЕМУ ПОВОРОТУ
+        self.play(m.FadeOut(arc_1), m.FadeOut(label_1), run_time=0.3)
+        
+        # Безопасное удаление из всех внутренних списков сцены
+        for mob in [arc_1, label_1]:
+            if mob in self.mobjects:
+                self.mobjects.remove(mob)
+            for attr_name in ["transformable_mobjects", "moving_mobjects", 
+                              "foreground_mobjects", "background_mobjects"]:
+                if hasattr(self, attr_name) and mob in getattr(self, attr_name):
+                    getattr(self, attr_name).remove(mob)
+                    
+        self.wait(0.05)  # Даём рендер-движку синхронизировать состояние
+        
+        #Возвращаем координаты
+        self.apply_inverse(rot_mat_1)
+        
+        # удаляем матрицу
+        self.play(m.FadeOut(mat_sym), run_time=0.3)
+        self.wait(0.5)
+
+        # ПОВОРОТ НА -45 ГРАДУСОВ 
+        angle_2 = -45
+        rad_2 = np.deg2rad(angle_2)
+        c2, s2 = np.cos(rad_2), np.sin(rad_2)
+
+        mat_sym_2 = create_rot_matrix(c2, s2, angle_2, symbolic=True)
+        self.play(m.Write(mat_sym_2), run_time=1)
+
+        mat_num_2 = create_rot_matrix(c2, s2, angle_2, symbolic=False)
+        mat_num_2.move_to(mat_sym_2)
+        self.play(m.Transform(mat_sym_2, mat_num_2), run_time=1)
+        self.wait(0.2)
+
+        rot_mat_2 = np.array([[c2, -s2], [s2, c2]])
+        self.apply_matrix(rot_mat_2)
+        self.wait(0.6)
+
+        # ДУГА на -45 градусов
+        arc_2 = m.Arc(
+            radius=1.5,
+            start_angle=0,
+            angle=rad_2,
+            color=m.ORANGE,
+            stroke_width=4
+        )
+        
+        # Подпись "-45°"
+        label_2 = m.MathTex("-45^\\circ", font_size=36)
+        mid_angle_2 = rad_2 / 2
+        label_2.move_to(
+            np.array([label_distance * np.cos(mid_angle_2), 
+                     label_distance * np.sin(mid_angle_2), 0])
+        )
+        
+        self.play(m.Create(arc_2), m.Write(label_2), run_time=0.6)
+        self.wait(2)
+
+
+class RotationCompositionScene(LinearTransformationScene_):
+    """Композиция поворотов: R(45) * R(20) = R(65)"""
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            foreground_plane_kwargs={
+                "x_range": [-4, 4, 1],
+                "y_range": [-2, 4, 1],
+                "background_line_style": {"stroke_color": m.GRAY_E, "stroke_width": 1}
+            },
+            **kwargs
+        )
+
+    def construct(self):
+        # Исходный вектор на оси X
+        v_start = np.array([2.5, 0])
+        arrow_initial = self.add_vector(v_start, color=m.PURPLE)
+        v_label = m.MathTex(r"\vec{v}", font_size=24, color=m.PURPLE)
+        v_label.next_to(arrow_initial.get_end(), m.RIGHT, buff=0.2)
+        self.play(m.Write(v_label))
+        self.wait(0.5)
+        
+        # Вспомогательная функция для создания матрицы поворота с цветом
+        def create_rot_matrix(c_val, s_val, angle_deg, color, symbolic=False, scale_factor=0.8):
+            if symbolic:
+                c_txt = rf"\cos({angle_deg}^\circ)"
+                s_txt = rf"\sin({angle_deg}^\circ)"
+                row1 = [c_txt, rf"-{s_txt}"]
+                row2 = [s_txt, c_txt]
+            else:
+                c_txt = f"{c_val:.2f}"
+                neg_s_txt = f"{-s_val:.2f}"
+                s_txt = f"{s_val:.2f}"
+                row1 = [c_txt, neg_s_txt]
+                row2 = [s_txt, c_txt]
+            
+            mat = m.Matrix(
+                [row1, row2],
+                element_to_mobject_config={"font_size": 32, "color": color}
+            )
+            # Делаем элементы матрицы жирнее за счет увеличения размера
+            for elem in mat.get_entries():
+                elem.scale(1.1)
+            
+            cols = mat.get_columns()
+            cols[0].shift(m.LEFT * 0.2)
+            cols[1].shift(m.RIGHT * 0.2)
+            mat.scale(scale_factor).to_edge(m.UP, buff=0.8).to_edge(m.LEFT)
+            return mat
+        
+        # ========== ПЕРВЫЙ ПОВОРОТ НА 20° (ЗЕЛЕНЫЙ) ==========
+        angle_1 = 20
+        rad_1 = np.deg2rad(angle_1)
+        c1, s1 = np.cos(rad_1), np.sin(rad_1)
+        
+        # Показываем матрицу R(20°) зеленого цвета
+        mat_sym_1 = create_rot_matrix(c1, s1, angle_1, m.GREEN, symbolic=True)
+        self.play(m.Write(mat_sym_1), run_time=0.8)
+        
+        mat_num_1 = create_rot_matrix(c1, s1, angle_1, m.GREEN, symbolic=False)
+        mat_num_1.move_to(mat_sym_1)
+        self.play(m.Transform(mat_sym_1, mat_num_1), run_time=0.8)
+        self.wait(0.2)
+        
+        # Анимируем поворот исходного вектора на 20°
+        rot_mat_1 = np.array([[c1, -s1], [s1, c1]])
+        v1 = rot_mat_1 @ v_start
+        
+        # Создаем зеленый вектор и анимируем его поворот
+        arrow_green = self.add_vector(v_start, color=m.GREEN)
+        
+        self.play(
+            m.Rotate(arrow_green, angle=rad_1, about_point=m.ORIGIN),
+            run_time=2
+        )
+        
+        # Добавляем метку для зеленого вектора (выше вектора)
+        v1_label = m.MathTex(r"\vec{v}_1 = R(20^\circ)\vec{v}", font_size=20, color=m.GREEN)
+        v1_label.next_to(arrow_green.get_end(), m.UP, buff=0.3)
+        self.play(m.Write(v1_label), run_time=0.5)
+        
+        # Показываем дугу поворота
+        arc_1 = m.Arc(radius=1.2, start_angle=0, angle=rad_1, color=m.GREEN, stroke_width=3)
+        label_1 = m.MathTex("20^\\circ", font_size=28, color=m.GREEN)
+        mid_angle = rad_1 / 2
+        label_distance = 1.4
+        label_1.move_to([label_distance * np.cos(mid_angle), label_distance * np.sin(mid_angle), 0])
+        
+        self.play(m.Create(arc_1), m.Write(label_1), run_time=0.6)
+        self.wait(1)
+        
+        # ========== ВТОРОЙ ПОВОРОТ НА 45° (КРАСНЫЙ) ==========
+        angle_2 = 45
+        rad_2 = np.deg2rad(angle_2)
+        c2, s2 = np.cos(rad_2), np.sin(rad_2)
+        
+        # Показываем матрицу R(45°) красного цвета
+        mat_sym_2 = create_rot_matrix(c2, s2, angle_2, m.RED, symbolic=True, scale_factor=0.8)
+        mat_sym_2.next_to(mat_sym_1, m.DOWN, buff=0.6).align_to(mat_sym_1, m.LEFT)
+        self.play(m.Write(mat_sym_2), run_time=0.8)
+        
+        mat_num_2 = create_rot_matrix(c2, s2, angle_2, m.RED, symbolic=False, scale_factor=0.8)
+        mat_num_2.move_to(mat_sym_2)
+        self.play(m.Transform(mat_sym_2, mat_num_2), run_time=0.8)
+        self.wait(0.2)
+        
+        # Анимируем поворот зеленого вектора на 45°
+        rot_mat_2 = np.array([[c2, -s2], [s2, c2]])
+        v2 = rot_mat_2 @ v1
+        
+        # Создаем красный вектор и анимируем его поворот от зеленого
+        arrow_red = self.add_vector(v1, color=m.RED)
+        
+        self.play(
+            m.Rotate(arrow_red, angle=rad_2, about_point=m.ORIGIN),
+            run_time=2
+        )
+        
+        # Добавляем метку для красного вектора (правее, чтобы не пересекалась с вектором)
+        v2_label = m.MathTex(r"\vec{v}_2 = R(45^\circ)\vec{v}_1", font_size=20, color=m.RED)
+        v2_label.next_to(arrow_red.get_end(), m.RIGHT, buff=0.4)
+        self.play(m.Write(v2_label), run_time=0.5)
+        
+        # Показываем дугу второго поворота
+        current_angle = np.arctan2(v1[1], v1[0])
+        arc_2 = m.Arc(
+            radius=1.2, 
+            start_angle=current_angle, 
+            angle=rad_2, 
+            color=m.RED, 
+            stroke_width=3
+        )
+        label_2 = m.MathTex("45^\\circ", font_size=28, color=m.RED)
+        mid_angle_2 = current_angle + rad_2 / 2
+        label_2.move_to([label_distance * np.cos(mid_angle_2), label_distance * np.sin(mid_angle_2), 0])
+        
+        self.play(m.Create(arc_2), m.Write(label_2), run_time=0.6)
+        self.wait(1)
+        
+        # ========== ФИНАЛЬНЫЙ ПОВОРОТ НА 65° (ФИОЛЕТОВЫЙ) ==========
+        angle_sum = angle_1 + angle_2
+        rad_sum = np.deg2rad(angle_sum)
+        c_sum, s_sum = np.cos(rad_sum), np.sin(rad_sum)
+        
+        # Показываем матрицу R(65°) фиолетового цвета
+        mat_sym_3 = create_rot_matrix(c_sum, s_sum, angle_sum, m.PURPLE, symbolic=True, scale_factor=0.8)
+        mat_sym_3.next_to(mat_sym_2, m.DOWN, buff=0.6).align_to(mat_sym_2, m.LEFT)
+        self.play(m.Write(mat_sym_3), run_time=0.8)
+        
+        mat_num_3 = create_rot_matrix(c_sum, s_sum, angle_sum, m.PURPLE, symbolic=False, scale_factor=0.8)
+        mat_num_3.move_to(mat_sym_3)
+        self.play(m.Transform(mat_sym_3, mat_num_3), run_time=0.8)
+        self.wait(0.2)
+        
+        # Анимируем прямой поворот исходного вектора на 65°
+        rot_mat_sum = np.array([[c_sum, -s_sum], [s_sum, c_sum]])
+        v3 = rot_mat_sum @ v_start
+        
+        # Создаем фиолетовый вектор и анимируем его поворот
+        arrow_purple = self.add_vector(v_start, color=m.PURPLE)
+        
+        self.play(
+            m.Rotate(arrow_purple, angle=rad_sum, about_point=m.ORIGIN),
+            run_time=2
+        )
+        
+        # Добавляем метку для фиолетового вектора (v3)
+        v3_label = m.MathTex(r"\vec{v}_3 = R(65^\circ)\vec{v}", font_size=20, color=m.PURPLE)
+        v3_label.next_to(arrow_purple.get_end(), m.RIGHT, buff=0.4)
+        v3_label.shift(m.UP * 0.4)
+        self.play(m.Write(v3_label), run_time=0.5)
+        
+        # Показываем дугу финального поворота
+        arc_sum = m.Arc(
+            radius=1.2, 
+            start_angle=0, 
+            angle=rad_sum, 
+            color=m.PURPLE, 
+            stroke_width=3
+        )
+        label_sum = m.MathTex("65^\\circ", font_size=28, color=m.PURPLE)
+        mid_angle_sum = rad_sum / 2
+        label_sum.move_to([label_distance * np.cos(mid_angle_sum), label_distance * np.sin(mid_angle_sum), 0])
+        
+        self.play(m.Create(arc_sum), m.Write(label_sum), run_time=0.6)
+        self.wait(1)
+        
+        # ========== ПОКАЗЫВАЕМ РАВЕНСТВО ==========
+        equivalence = m.MathTex(
+            f"R({angle_2}^\\circ) \\cdot R({angle_1}^\\circ) = R({angle_sum}^\\circ)",
+            font_size=24, color=m.BLACK
+        )
+        equivalence.to_edge(m.DOWN, buff=1.5)
+        self.play(m.Write(equivalence))
+        
+        explanation = m.Text(
+            f"Композиция поворотов на {angle_1}° и {angle_2}° эквивалентна повороту на {angle_sum}°",
+            font_size=20, color=m.BLACK
+        )
+        explanation.next_to(equivalence, m.DOWN)
+        self.play(m.Write(explanation))
+
+class ReflectionMatrixScene(LinearTransformationScene_):
+    '''Матрица отражения'''
+    def __init__(self, **kwargs):
+        super().__init__(
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # 1. Исходный вектор (берем не на оси, чтобы было видно отражение)
+        # Вектор v = (2, 3)
+        v_start = np.array([2, 3, 0])
+        self.add_vector(v_start, color=m.PURPLE)
+        self.wait(0.5)
+
+        # 2. Матрица отражения S
+        # S = [[1, 0], [0, -1]]
+        S = np.array([[1, 0], [0, -1]])
+
+        # Создаем визуальное отображение матрицы
+        mat = m.Matrix(
+            [[1, 0], [0, -1]],
+            element_to_mobject_config={"font_size": 40, "color": m.DARK_GRAY}
+        )
+        mat.scale(1.2).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+
+        # Показываем матрицу
+        self.play(m.Write(mat), run_time=1)
+        self.wait(1)
+
+        # 3. Применяем преобразование
+        # Сетка перевернется, вектор отразится относительно оси X
+        self.apply_matrix(S)
+        self.wait(1.5)
+
+
+class ReflectionLineScene(LinearTransformationScene_):
+    '''4 отражение относительно линии, проходящей через начало координат'''
+    def __init__(self, **kwargs):
+        super().__init__(
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # 1. Параметры отражения (α = 30°)
+        alpha_deg = 30
+        alpha_rad = np.deg2rad(alpha_deg)
+        c2a, s2a = np.cos(2*alpha_rad), np.sin(2*alpha_rad)
+        S = np.array([[c2a, s2a], 
+                      [s2a, -c2a]])
+
+        # 2. Исходный вектор (взят не на осях и не на прямой, чтобы отражение было заметно)
+        v_start = np.array([3, 1, 0])
+        self.add_vector(v_start, color=m.PURPLE)
+        self.wait(0.5)
+
+        # 3. Прямая отражения 
+        line_len = 5
+        refl_line = m.Line(
+            start=[-line_len * np.cos(alpha_rad), -line_len * np.sin(alpha_rad), 0],
+            end=[line_len * np.cos(alpha_rad), line_len * np.sin(alpha_rad), 0],
+            color=m.YELLOW,
+            stroke_width=4
+        )
+
+        self.play(m.Create(refl_line), run_time=1.5)
+        self.wait(1)
+
+        # 4. Матрица отражения S(α)
+        mat_sym = m.Matrix(
+            [[rf"\cos(2\alpha)", rf"\sin(2\alpha)"],
+             [rf"\sin(2\alpha)", rf"-\cos(2\alpha)"]],
+            element_to_mobject_config={"font_size": 32, "color": m.DARK_GRAY}
+        )
+        mat_sym.scale(1.1).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+
+        mat_num = m.Matrix(
+            [[f"{c2a:.2f}", f"{s2a:.2f}"],
+             [f"{s2a:.2f}", f"{-c2a:.2f}"]],
+            element_to_mobject_config={"font_size": 32, "color": m.DARK_GRAY}
+        )
+        mat_num.move_to(mat_sym)
+
+        self.play(m.Write(mat_sym), run_time=1)
+        self.play(m.Transform(mat_sym, mat_num), run_time=1.5)
+        self.wait(0.5)
+
+        # 5. Применяем отражение
+        self.apply_matrix(S)
+        self.wait(1.5)
+
+                   
+        self.wait(0.05)  # Синхронизация рендера
+
+class PermutationMatrixScene(LinearTransformationScene_):
+    """5 Перестановка в двумерном пространстве. 
+    Показывается матрица перестановок и анимируется ее действие.]"""
+    def __init__(self, **kwargs):
+        super().__init__(
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # 1. ИСПРАВЛЕНИЕ: Берем вектор [2, 3] вместо [3, 7].
+        v_start = np.array([2, 3, 0])
+        self.add_vector(v_start, color=m.PURPLE)
+        self.wait(0.5)
+
+        # 2. Матрица перестановки P (меняет X и Y местами)
+        P = np.array([[0, 1], [1, 0]])
+
+        # Создаем визуальное отображение матрицы
+        mat = m.Matrix(
+            [[0, 1], [1, 0]],
+            element_to_mobject_config={"font_size": 40, "color": m.DARK_GRAY}
+        )
+        mat.scale(1.2).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+
+        # Показываем матрицу
+        self.play(m.Write(mat), run_time=1)
+        self.wait(1)
+
+        # 3. Анимация действия
+        # Вектор перемещается из (2, 3) в (3, 2)
+        self.apply_matrix(P)
+        self.wait(1.5)
+
+class Permutation3DScene(ThreeDScene_):
+    """6 Перестановка в трехмерном пространстве с параллелепипедом"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.basis_i_color = m.GREEN
+        self.basis_j_color = m.RED
+        self.basis_k_color = m.GOLD
+
+    def construct(self):
+        # 1. Настройка осей и камеры
+        axes = m.ThreeDAxes(x_length=6, y_length=6, z_length=6)
+        axes.set_color(m.GRAY)
+        self.set_camera_orientation(phi=70 * m.DEGREES, theta=-45 * m.DEGREES)
+        self.begin_ambient_camera_rotation(rate=0.15)
+        self.add(axes)
+        self.wait(1)
+
+        # 2. Векторы РАЗНОЙ длины (1, 2, 3)
+        i_vec = m.Vector(m.RIGHT * 1, color=self.basis_i_color)
+        j_vec = m.Vector(m.UP * 2, color=self.basis_j_color)
+        k_vec = m.Vector(m.OUT * 3, color=self.basis_k_color)
+
+        # 3. Метки (исправлено положение k)
+        i_label = m.MathTex("i").set_color(self.basis_i_color).next_to(i_vec, m.RIGHT)
+        j_label = m.MathTex("j").set_color(self.basis_j_color).next_to(j_vec, m.UP)
+        # k_label сдвигаем чуть выше (m.UP), чтобы не перекрывалось осями
+        k_label = m.MathTex("k").set_color(self.basis_k_color).next_to(k_vec, m.UP + m.RIGHT*0.5)
+
+        self.add_fixed_in_frame_mobjects(i_label, j_label, k_label)
+
+        # 4. Параллелепипед (объем, натянутый на векторы)
+        # Создаем куб, масштабируем его под длины векторов (1, 2, 3) и сдвигаем в первый октант
+        box = m.Cube(side_length=1)
+        box.scale([1, 2, 3]) 
+        box.shift([0.5, 1, 1.5]) # Сдвигаем, чтобы угол был в (0,0,0)
+        box.set_stroke(m.WHITE, width=1, opacity=0.5)
+        box.set_fill(m.BLUE, opacity=0.1)
+
+        self.play(
+            m.GrowArrow(i_vec), m.GrowArrow(j_vec), m.GrowArrow(k_vec),
+            m.FadeIn(box),
+            m.Write(i_label), m.Write(j_label), m.Write(k_label)
+        )
+        self.wait(1)
+
+
+        # ПРИМЕР 1: Циклическая перестановка
+        P1 = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        mat1 = m.Matrix(
+            [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
+            element_to_mobject_config={"font_size": 28}
+        )
+        mat1.scale(0.8).to_corner(m.UP + m.LEFT).shift(m.DOWN * 0.8)
+        self.add_fixed_in_frame_mobjects(mat1)
+
+
+        self.play(m.Write(mat1))
+        self.wait(1)
+
+        # Вычисляем новые положения (умножаем матрицу на исходные векторы)
+        # Важно: умножаем на исходные координаты [1,0,0], [0,2,0], [0,0,3]
+        i1_new = m.Vector(P1 @ np.array([1, 0, 0]) * 1, color=self.basis_i_color)
+        j1_new = m.Vector(P1 @ np.array([0, 1, 0]) * 2, color=self.basis_j_color)
+        k1_new = m.Vector(P1 @ np.array([0, 0, 1]) * 3, color=self.basis_k_color)
+
+        # Трансформируем и параллелепипед
+        box1_new = m.Cube(side_length=1)
+        box1_new.scale([1, 2, 3]) # Сохраняем пропорции
+        box1_new.shift([0.5, 1, 1.5])
+        box1_new.apply_matrix(P1) # Применяем матрицу к форме
+        box1_new.set_stroke(m.WHITE, width=1, opacity=0.5)
+        box1_new.set_fill(m.BLUE, opacity=0.1)
+
+        self.play(
+            m.Transform(i_vec, i1_new),
+            m.Transform(j_vec, j1_new),
+            m.Transform(k_vec, k1_new),
+            m.Transform(box, box1_new),
+            run_time=2
+        )
+        self.wait(2)
+
+        self.play(m.FadeOut(mat1), run_time=0.5)
+        self.remove(mat1)
+        self.wait(0.5)
+
+        # Возврат в исходное состояние
+        '''self.play(
+            m.Transform(i_vec, m.Vector(m.RIGHT * 1, color=self.basis_i_color)),
+            m.Transform(j_vec, m.Vector(m.UP * 2, color=self.basis_j_color)),
+            m.Transform(k_vec, m.Vector(m.OUT * 3, color=self.basis_k_color)),
+            m.Transform(box, m.Cube(side_length=1).scale([1, 2, 3]).shift([0.5, 1, 1.5]).set_stroke(m.WHITE, width=1, opacity=0.5).set_fill(m.BLUE, opacity=0.1)),
+            run_time=1.5
+        )
+        self.wait(1)'''
+
+        # ПРИМЕР 2: Замена осей X и Y
+        P2 = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 1]])
+        mat2 = m.Matrix(
+            [[0, 1, 0], [1, 0, 0], [0, 0, 1]],
+            element_to_mobject_config={"font_size": 28}
+        )
+        mat2.scale(0.8).to_corner(m.UP + m.LEFT).shift(m.DOWN * 0.8)
+        self.add_fixed_in_frame_mobjects(mat2)
+
+
+        self.play(m.Write(mat2))
+        self.wait(1)
+
+        i2_new = m.Vector(P2 @ np.array([1, 0, 0]) * 1, color=self.basis_i_color)
+        j2_new = m.Vector(P2 @ np.array([0, 1, 0]) * 2, color=self.basis_j_color)
+        k2_new = m.Vector(P2 @ np.array([0, 0, 1]) * 3, color=self.basis_k_color) # k не меняется
+
+        box2_new = m.Cube(side_length=1)
+        box2_new.scale([1, 2, 3])
+        box2_new.shift([0.5, 1, 1.5])
+        box2_new.apply_matrix(P2)
+        box2_new.set_stroke(m.WHITE, width=1, opacity=0.5)
+        box2_new.set_fill(m.BLUE, opacity=0.1)
+
+        self.play(
+            m.Transform(i_vec, i2_new),
+            m.Transform(j_vec, j2_new),
+            m.Transform(k_vec, k2_new),
+            m.Transform(box, box2_new),
+            run_time=2
+        )
+        self.wait(2)
+
+        self.play(
+            m.FadeOut(mat2), 
+            m.FadeOut(i_vec), m.FadeOut(j_vec), m.FadeOut(k_vec),
+            m.FadeOut(box),
+            m.FadeOut(i_label), m.FadeOut(j_label), m.FadeOut(k_label)
+        )
+        self.wait(1)
+
+class UpperTriangularShearScene(LinearTransformationScene_):
+    """7а Демонстрация сдвига (shear) с помощью верхнетреугольной матрицы в 2D"""
+    def __init__(self, **kwargs):
+        super().__init__(
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # Матрица верхнетреугольного сдвига
+        # Общий вид: [[a, b], [0, c]]. При a=1, c=1, b=1 получаем чистый сдвиг
+        U = np.array([[1, 1], [0, 1]])
+
+        # Визуализация матрицы
+        mat = m.Matrix(
+            [[1, 1], [0, 1]],
+            element_to_mobject_config={"font_size": 32, "color": m.DARK_GRAY}
+        )
+        mat.scale(1.1).to_edge(m.UP, buff=1).to_edge(m.LEFT).shift(m.DOWN * 0.8)
+
+        self.play(m.Write(mat), run_time=1)
+        self.wait(0.5)
+
+        # Тестовый вектор для наглядности
+        # Возьмём (2, 2). После сдвига станет (2 + 1*2, 2) = (4, 2)
+        v_start = np.array([2, 2, 0])
+        self.add_vector(v_start, color=m.PURPLE)
+        self.wait(0.5)
+
+        # Применяем преобразование
+        # Вертикальная сетка останется вертикальной, горизонтальная наклонится
+        self.apply_matrix(U)
+        self.wait(1.5)
+
+class UpperTriangularScene(ThreeDScene_):
+    """8 Демонстрация влияния верхнетреугольной матрицы на трёхмерное пространство"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    def construct(self):
+        # 1. Настройка осей и камеры
+        axes = m.ThreeDAxes(x_length=10, y_length=10, z_length=10)
+        axes.set_color(m.GRAY)
+        
+        # Настраиваем камеру: угол обзора
+        self.set_camera_orientation(phi=55 * m.DEGREES, theta=-30 * m.DEGREES)
+        
+        self.begin_ambient_camera_rotation(rate=0.15)
+        self.add(axes)
+        self.wait(0.5)
+
+        # 2. Исходный параллелепипед (ещё меньше, чтобы точно поместился)
+        # Размеры: X=0.3, Y=0.6, Z=0.6
+        box = m.Cube(side_length=1)
+        box.scale([0.3, 0.6, 0.6])
+        box.shift([0.15, 0.3, 0.3]) 
+        box.set_stroke(m.WHITE, width=1.5, opacity=0.8)
+        box.set_fill(m.BLUE, opacity=0.15)
+
+        # 3. Цветные вектора-рёбра
+        v_i = m.Vector([0.3, 0, 0], color=m.GREEN, buff=0)
+        v_j = m.Vector([0, 0.6, 0], color=m.RED, buff=0)
+        v_k = m.Vector([0, 0, 0.6], color=m.GOLD, buff=0)
+
+        self.play(
+            m.Create(box),
+            m.GrowArrow(v_i), m.GrowArrow(v_j), m.GrowArrow(v_k),
+            run_time=1.5
+        )
+        self.wait(0.5)
+
+        # 4. Матрица U (сдвинута ниже и уменьшена)
+        U = np.array([[2, 5, -1], [0, 3, 4], [0, 0, 7]])
+        mat = m.Matrix(
+            [[2, 5, -1], [0, 3, 4], [0, 0, 7]],
+            element_to_mobject_config={"font_size": 42, "color": m.DARK_GRAY}
+        )
+        mat.scale(0.6).to_corner(m.UP + m.LEFT).shift(m.DOWN * 1.5)
+        self.add_fixed_in_frame_mobjects(mat)
+
+        self.play(m.Write(mat), run_time=1)
+        self.wait(1)
+
+        # 5. Вычисляем конечные положения
+        v_i_new = m.Vector(U @ [0.3, 0, 0], color=m.GREEN, buff=0)
+        v_j_new = m.Vector(U @ [0, 0.6, 0], color=m.RED, buff=0)
+        v_k_new = m.Vector(U @ [0, 0, 0.6], color=m.GOLD, buff=0)
+
+        box_new = m.Cube(side_length=1)
+        box_new.scale([0.3, 0.6, 0.6])
+        box_new.shift([0.15, 0.3, 0.3])
+        box_new.apply_matrix(U)
+        box_new.set_stroke(m.WHITE, width=1.5, opacity=0.8)
+        box_new.set_fill(m.BLUE, opacity=0.15)
+
+        # 6. Анимация трансформации
+        self.play(
+            m.Transform(box, box_new),
+            m.Transform(v_i, v_i_new),
+            m.Transform(v_j, v_j_new),
+            m.Transform(v_k, v_k_new),
+            run_time=3
+        )
+        self.wait(1.5)
+
+
+        # 7. Очистка
+        self.play(
+            m.FadeOut(mat), 
+            m.FadeOut(box), m.FadeOut(v_i), m.FadeOut(v_j), m.FadeOut(v_k)
+        )
+        self.wait(0.5)
+
+class SymmetricMatrixScene(m.Scene):
+    """9 Сравнение произвольной и симметричной матриц"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        # ================= ФУНКЦИЯ СОЗДАНИЯ ПЛОСКОСТИ =================
+        def create_plane():
+            plane = m.NumberPlane(
+                x_range=[-3, 3, 1],
+                y_range=[-2, 3, 1],  # 5 единиц вместо 6
+                y_length=4.5, 
+                background_line_style={
+                    "stroke_color": m.GRAY,
+                    "stroke_width": 1,
+                    "stroke_opacity": 0.3
+                },
+                axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+            )
+            plane.add_coordinates()
+            plane.coordinate_labels.set_color(m.BLACK)
+            return plane
+
+        # 1. Плоскости
+        plane_L = create_plane().shift(m.LEFT * 3.5)
+        plane_R = create_plane().shift(m.RIGHT * 3.5)
+
+        # 2. Окружности (строго на пересечении осей)
+        circle_L = m.Circle(radius=0.8, color=m.BLUE, stroke_width=3)
+        circle_L.move_to(plane_L.c2p(0, 0))
+
+        circle_R = m.Circle(radius=0.8, color=m.GREEN, stroke_width=3)
+        circle_R.move_to(plane_R.c2p(0, 0))
+
+        self.play(m.Create(plane_L), m.Create(plane_R))
+        self.play(m.Create(circle_L), m.Create(circle_R))
+        self.wait(0.5)
+
+        # 3. МАТРИЦЫ (Данные для математики + Визуал для отображения)
+        
+        # === ИСПРАВЛЕНИЕ: Объявляем numpy-массивы ДО визуальных объектов ===
+        mat_A = np.array([[1.5, 1.0], [-0.5, 1.2]])  # Для ApplyMatrix
+        mat_S = np.array([[2.0, 0], [0, 0.8]])       # Для ApplyMatrix
+
+        # ЛЕВАЯ (Синяя) - Визуальное отображение
+        mat_L = m.Matrix(
+            [[1.5, 1.0], [-0.5, 1.2]],
+            element_to_mobject_config={"font_size": 38, "color": m.BLUE}
+        )
+        mat_L.scale(0.6)
+        mat_L.get_brackets().set_color(m.BLUE)
+        mat_L.get_brackets().set_stroke(width=1.5)
+        mat_L.move_to(m.LEFT * 4.6 + m.UP * 2.5)
+
+        title_L = m.VGroup(
+            m.Text("Произвольная", color=m.BLUE, font_size=16),
+            m.MathTex("A", color=m.BLUE, font_size=16)
+        ).arrange(m.RIGHT)
+        title_L.next_to(mat_L, m.DOWN)
+
+        # ПРАВАЯ (Зеленая) - Визуальное отображение
+        mat_R = m.Matrix(
+            [[2.0, 0], [0, 0.8]],
+            element_to_mobject_config={"font_size": 38, "color": m.GREEN}
+        )
+        mat_R.scale(0.6)
+        mat_R.get_brackets().set_color(m.GREEN)
+        mat_R.get_brackets().set_stroke(width=1.5)
+        mat_R.move_to(m.RIGHT * 4.6 + m.UP * 2.5)
+
+        title_R = m.VGroup(
+            m.Text("Симметричная", color=m.GREEN, font_size=16),
+            m.MathTex("S", color=m.GREEN, font_size=16)
+        ).arrange(m.RIGHT)
+        title_R.next_to(mat_R, m.DOWN)
+        title_R.shift(m.RIGHT * 0.2)
+
+        self.play(m.Write(mat_L), m.Write(title_L), m.Write(mat_R), m.Write(title_R))
+        self.wait(1)
+
+        # 4. Анимация (теперь mat_A и mat_S объявлены и доступны)
+        self.play(
+            m.ApplyMatrix(mat_A, circle_L, about_point=plane_L.c2p(0, 0)),
+            run_time=2
+        )
+        self.play(
+            m.ApplyMatrix(mat_S, circle_R, about_point=plane_R.c2p(0, 0)),
+            run_time=2
+        )
+        self.wait(1)
+
+        # 5. Подпись
+        caption = m.Text(
+            "Симметричная матрица: растяжение вдоль ортогональных осей, без вращения",
+            font_size=22, color=m.BLACK
+        ).to_edge(m.DOWN, buff=0.7)
+        self.play(m.Write(caption))
+        self.wait(3)
+
+        # 6. Очистка
+        self.play(m.FadeOut(m.VGroup(
+            plane_L, plane_R, circle_L, circle_R,
+            mat_L, mat_R, title_L, title_R, caption
+        )))
+
+class CovarianceEllipseScene(m.Scene):
+    """10 Визуализация ковариационной матрицы через облако точек и эллипс рассеяния"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+        # Фиксируем seed для воспроизводимости анимации
+        np.random.seed(42)
+
+    def construct(self):
+        # Настройка осей
+        axes = m.Axes(
+            x_range=[-4, 4, 1],
+            y_range=[-3, 4, 1],
+            x_length=6,
+            y_length=5.25
+        )
+        axes.set_color(m.BLACK)
+        axes.add_coordinates()
+        axes.coordinate_labels.set_color(m.BLACK)
+        
+        self.add(axes)
+        self.wait(0.5)
+
+        # Используем настоящее случайное распределение
+        n_points = 100  # Количество точек
+        
+        # Базовые точки из стандартного нормального распределения N(0,1)
+        base_points = np.random.randn(n_points, 2)
+
+        # ШАГ 1: КРУГ (Равные дисперсии, нет корреляции) 
+        cov1 = np.array([[1, 0], [0, 1]])
+        # Точки уже из N(0,I), так что просто используем их
+        points_1_coords = base_points * 0.8  # Немного уменьшим масштаб
+        
+        mat1 = self.create_matrix(cov1, color=m.BLACK)
+        cap1 = m.Text("(a) Равные дисперсии → Круг", color=m.BLACK, font_size=24).to_edge(m.DOWN, buff=0.7)
+        
+        # Создаём VGroup из точек
+        points_1 = m.VGroup(*[
+            m.Dot(axes.c2p(p[0], p[1]), radius=0.04, color=m.BLUE_E) 
+            for p in points_1_coords
+        ])
+        
+        # Эллипс (круг) для визуализации
+        contour_1 = m.Circle(radius=1.5, color=m.BLUE, stroke_width=2)
+        contour_1.set_fill(m.BLUE, opacity=0.1)
+        contour_1.move_to(axes.c2p(0, 0))
+
+        self.play(
+            m.Create(contour_1), 
+            m.FadeIn(points_1),
+            m.Write(mat1),
+            m.Write(cap1),
+            run_time=2
+        )
+        self.wait(1)
+        
+        self.play(
+            m.FadeOut(contour_1), m.FadeOut(points_1), 
+            m.FadeOut(mat1), m.FadeOut(cap1)
+        )
+
+        #  ШАГ 2: ЭЛЛИПС ПО ОСЯМ (Разные дисперсии) 
+        cov2 = np.array([[3, 0], [0, 1]]) 
+        # Преобразуем точки: умножаем на sqrt(дисперсий)
+        trans2 = np.array([[np.sqrt(3), 0], [0, 1]])
+        points_2_coords = base_points @ trans2.T
+        
+        mat2 = self.create_matrix(cov2, color=m.BLACK)
+        cap2 = m.Text("(b) Разные дисперсии → Эллипс по осям", color=m.BLACK, font_size=24).to_edge(m.DOWN, buff=0.7)
+
+        points_2 = m.VGroup(*[
+            m.Dot(axes.c2p(p[0], p[1]), radius=0.04, color=m.BLUE_E) 
+            for p in points_2_coords
+        ])
+        
+        # Эллипс: ширина и высота пропорциональны sqrt(собственных значений)
+        contour_2 = m.Ellipse(
+            width=2 * np.sqrt(3) * 1.5, 
+            height=2 * 1 * 1.5, 
+            color=m.BLUE, 
+            stroke_width=2
+        )
+        contour_2.set_fill(m.BLUE, opacity=0.1)
+        contour_2.move_to(axes.c2p(0, 0))
+
+        self.play(
+            m.Create(contour_2), 
+            m.FadeIn(points_2),
+            m.Write(mat2),
+            m.Write(cap2),
+            run_time=2
+        )
+        self.wait(1)
+
+        self.play(
+            m.FadeOut(contour_2), m.FadeOut(points_2), 
+            m.FadeOut(mat2), m.FadeOut(cap2)
+        )
+
+        # ШАГ 3: ПОВЁРНУТЫЙ ЭЛЛИПС (Корреляция) 
+        cov3 = np.array([[2, 1], [1, 2]])
+        # Для такой ковариации используем разложение Холецкого или собственное разложение
+        # Собственные значения: 3 и 1, угол поворота 45°
+        angle = np.deg2rad(45)
+        rot = np.array([[np.cos(angle), -np.sin(angle)], [np.sin(angle), np.cos(angle)]])
+        scale = np.array([[np.sqrt(3), 0], [0, 1]])
+        trans3 = rot @ scale
+        
+        points_3_coords = base_points @ trans3.T
+        
+        mat3 = self.create_matrix(cov3, color=m.BLACK)
+        cap3 = m.Text("(c) Корреляция → Повёрнутый эллипс", color=m.BLACK, font_size=24).to_edge(m.DOWN, buff=0.7)
+
+        points_3 = m.VGroup(*[
+            m.Dot(axes.c2p(p[0], p[1]), radius=0.04, color=m.BLUE_E) 
+            for p in points_3_coords
+        ])
+        
+        contour_3 = m.Ellipse(
+            width=2 * np.sqrt(3) * 1.5, 
+            height=2 * 1 * 1.5, 
+            color=m.BLUE, 
+            stroke_width=2
+        )
+        contour_3.set_fill(m.BLUE, opacity=0.1)
+        contour_3.rotate(angle)
+        contour_3.move_to(axes.c2p(0, 0))
+
+        self.play(
+            m.Create(contour_3), 
+            m.FadeIn(points_3),
+            m.Write(mat3),
+            m.Write(cap3),
+            run_time=2
+        )
+        self.wait(3)
+
+        self.play(m.FadeOut(*self.mobjects))
+
+    def create_matrix(self, cov_matrix, color):
+        """Вспомогательная функция для создания красивой матрицы"""
+        mat = m.Matrix(
+            cov_matrix,
+            element_to_mobject_config={"font_size": 42, "color": color}
+        )
+        mat.scale(0.7)
+        mat.get_brackets().set_color(m.BLACK)
+        mat.get_brackets().set_stroke(width=2)
+        mat.to_corner(m.UP + m.LEFT, buff=1)
+        return mat
+    
+class MahalanobisDistanceScene(m.Scene):
+    """Визуализация расстояния Махаланобиса vs евклидова расстояния"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+        np.random.seed(42)
+
+    def construct(self):
+        # ================= НАСТРОЙКА ОСЕЙ =================
+        axes = m.Axes(
+            x_range=[-4, 4, 1],
+            y_range=[-4, 4, 1],
+            x_length=6,
+            y_length=6
+        )
+        axes.set_color(m.BLACK)
+        axes.add_coordinates()
+        axes.coordinate_labels.set_color(m.BLACK)
+        self.add(axes)
+        self.wait(0.5)
+
+        # ================= ГЕНЕРАЦИЯ ДАННЫХ =================
+        # Ковариационная матрица с корреляцией
+        cov = np.array([[2, 1.5], [1.5, 2]])
+        mean = np.array([0, 0])
+        
+        # Генерируем коррелированные точки
+        n_points = 150
+        base_points = np.random.randn(n_points, 2)
+        # Применяем преобразование для получения нужной ковариации
+        L = np.linalg.cholesky(cov)
+        points_coords = base_points @ L.T * 0.8
+        
+        # Визуализация точек
+        points = m.VGroup(*[
+            m.Dot(axes.c2p(p[0], p[1]), radius=0.03, color=m.BLUE_E) 
+            for p in points_coords
+        ])
+        
+        # Эллипс рассеяния
+        eigvals, eigvecs = np.linalg.eigh(cov)
+        angle = np.arctan2(eigvecs[1, 0], eigvecs[0, 0])
+        ellipse = m.Ellipse(
+            width=2 * np.sqrt(eigvals[0]) * 2.5 * 0.8,
+            height=2 * np.sqrt(eigvals[1]) * 2.5 * 0.8,
+            color=m.BLUE,
+            stroke_width=2
+        )
+        ellipse.set_fill(m.BLUE, opacity=0.1)
+        ellipse.rotate(angle)
+        ellipse.move_to(axes.c2p(0, 0))
+        
+        self.play(m.Create(ellipse), m.FadeIn(points), run_time=2)
+        self.wait(0.5)
+
+        # ================= ДВЕ ТОЧКИ =================
+        # Выбираем две точки: одну в центре облака, другую на периферии
+        point_A = np.array([0.5, 0.5])  # Близко к центру
+        point_B = np.array([2.5, 2.5])  # Дальше, но вдоль главной оси
+        
+        dot_A = m.Dot(axes.c2p(*point_A), radius=0.08, color=m.RED)
+        dot_B = m.Dot(axes.c2p(*point_B), radius=0.08, color=m.GREEN)
+        
+        # Евклидово расстояние (прямая линия)
+        euclid_line = m.Line(
+            axes.c2p(*point_A), 
+            axes.c2p(*point_B), 
+            color=m.RED,
+            stroke_width=3
+        )
+        euclid_dist = np.linalg.norm(point_A - point_B)
+        
+        label_euclid = m.Text(
+            f"Евклидово: {euclid_dist:.2f}",
+            color=m.RED,
+            font_size=20
+        ).to_corner(m.UP + m.LEFT)
+        
+        self.play(
+            m.Create(dot_A), m.Create(dot_B),
+            m.Create(euclid_line),
+            m.Write(label_euclid),
+            run_time=2
+        )
+        self.wait(1)
+
+        # ================= РАССТОЯНИЕ МАХАЛАНОБИСА =================
+        # Вычисляем обратную ковариационную матрицу
+        cov_inv = np.linalg.inv(cov)
+        
+        # Расстояние Махаланобиса
+        diff = point_A - point_B
+        mahal_dist = np.sqrt(diff @ cov_inv @ diff)
+        
+        # Показываем формулу
+        formula = m.MathTex(
+            r"D_M(\mathbf{x}, \mathbf{y}) = \sqrt{(\mathbf{x} - \mathbf{y})^T \Sigma^{-1} (\mathbf{x} - \mathbf{y})}",
+            font_size=24
+        ).to_edge(m.UP)
+        
+        # "Отбеливание" пространства - показываем преобразованные точки
+        # Применяем L^{-1} к точкам, где L - разложение Холецкого
+        L_inv = np.linalg.inv(L)
+        point_A_white = point_A @ L_inv.T * 0.8
+        point_B_white = point_B @ L_inv.T * 0.8
+        
+        # Создаём правую часть сцены для "отбеленного" пространства
+        axes_white = m.Axes(
+            x_range=[-3, 3, 1],
+            y_range=[-3, 3, 1],
+            x_length=4,
+            y_length=4
+        )
+        axes_white.set_color(m.BLACK)
+        axes_white.shift(m.RIGHT * 4)
+        axes_white.add_coordinates()
+        axes_white.coordinate_labels.set_color(m.BLACK)
+        
+        # Круг (единичная ковариация)
+        circle_white = m.Circle(
+            radius=1.5,
+            color=m.GREEN,
+            stroke_width=2
+        )
+        circle_white.set_fill(m.GREEN, opacity=0.1)
+        circle_white.move_to(axes_white.c2p(0, 0))
+        
+        # Точки в отбеленном пространстве
+        dot_A_white = m.Dot(
+            axes_white.c2p(*point_A_white),
+            radius=0.08,
+            color=m.RED
+        )
+        dot_B_white = m.Dot(
+            axes_white.c2p(*point_B_white),
+            radius=0.08,
+            color=m.GREEN
+        )
+        
+        # Линия расстояния Махаланобиса
+        mahal_line = m.Line(
+            axes_white.c2p(*point_A_white),
+            axes_white.c2p(*point_B_white),
+            color=m.GREEN,
+            stroke_width=3
+        )
+        
+        label_mahal = m.Text(
+            f"Махаланобис: {mahal_dist:.2f}",
+            color=m.GREEN,
+            font_size=20
+        ).to_corner(m.UP + m.RIGHT)
+        
+        label_white = m.Text(
+            "«Отбеленное» пространство:\nковариация = I",
+            color=m.BLACK,
+            font_size=16
+        ).next_to(axes_white, m.DOWN)
+        
+        self.play(
+            m.Write(formula),
+            m.Create(axes_white),
+            m.Create(circle_white),
+            m.Create(dot_A_white),
+            m.Create(dot_B_white),
+            m.Create(mahal_line),
+            m.Write(label_mahal),
+            m.Write(label_white),
+            run_time=3
+        )
+        self.wait(2)
+
+        # ================= ФИНАЛЬНАЯ ПОДПИСЬ =================
+        caption = m.Text(
+            "Евклидово расстояние не учитывает форму распределения,\n"
+            "а расстояние Махаланобиса измеряет в единицах стандартного отклонения",
+            color=m.BLACK,
+            font_size=18
+        ).to_edge(m.DOWN)
+        
+        self.play(m.Write(caption), run_time=2)
+        self.wait(3)
+
+        # Очистка
+        self.play(m.FadeOut(*self.mobjects))
+
+class MahalanobisTwoPointsScene(m.Scene):
+    """Анимация отбеливания: Евклидово расстояние между двумя точками превращается в расстояние Махаланобиса"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+        np.random.seed(42)
+
+    def construct(self):
+        # 1. Оси
+        axes = m.Axes(x_range=[-4, 4, 1], y_range=[-3, 3, 1], x_length=6, y_length=4)
+        axes.set_color(m.BLACK)
+        axes.add_coordinates()
+        axes.coordinate_labels.set_color(m.BLACK)
+        self.add(axes)
+        
+        # 2. Данные: Коррелированное облако
+        cov = np.array([[2, 1.5], [1.5, 2]])
+        L = np.linalg.cholesky(cov)
+        n_points = 150
+        base_points = np.random.randn(n_points, 2)
+        points_coords = (base_points @ L.T) * 0.8
+        
+        points = m.VGroup(*[m.Dot(axes.c2p(*p), radius=0.04, color=m.BLUE_E) for p in points_coords])
+        
+        # Эллипс рассеяния
+        eigvals, eigvecs = np.linalg.eigh(cov)
+        angle = np.arctan2(eigvecs[1, 0], eigvecs[0, 0])
+        ellipse = m.Ellipse(
+            width=2 * np.sqrt(eigvals[0]) * 2.0 * 0.8,
+            height=2 * np.sqrt(eigvals[1]) * 2.0 * 0.8,
+            color=m.BLUE, stroke_width=2
+        )
+        ellipse.set_fill(m.BLUE, opacity=0.1)
+        ellipse.rotate(angle)
+        ellipse.move_to(axes.c2p(0, 0))
+        
+        # 3. ДВЕ ТОЧКИ
+        p1 = np.array([-1.0, -0.5]) * 0.8
+        p2 = np.array([2.0, 1.5]) * 0.8
+        
+        dot1 = m.Dot(axes.c2p(*p1), radius=0.08, color=m.RED)
+        dot2 = m.Dot(axes.c2p(*p2), radius=0.08, color=m.GREEN)
+        
+        # Исходное Евклидово расстояние (жёлтая линия)
+        euclid_line = m.Line(axes.c2p(*p1), axes.c2p(*p2), color=m.PURPLE, stroke_width=3)
+        euclid_dist = np.linalg.norm(p1 - p2)
+        label_euclid = m.Text(f"Евклидово: {euclid_dist:.2f}", color=m.DARK_GRAY, font_size=20)
+        label_euclid.next_to(euclid_line, m.UP)
+        label_euclid.shift(m.LEFT * 1.8 + m.UP * 0.5)
+        
+        # Показываем исходную сцену
+        self.play(
+            m.Create(ellipse), m.FadeIn(points),
+            m.Create(dot1), m.Create(dot2), m.Create(euclid_line),
+            m.Write(label_euclid),
+            run_time=2
+        )
+        self.wait(1)
+
+        # 4. Матрица отбеливания W = Σ^(-1/2)
+        eigvals, eigvecs = np.linalg.eigh(cov)
+        W = eigvecs @ np.diag(1 / np.sqrt(eigvals)) @ eigvecs.T
+        
+        # Вычисляем, где окажутся точки после отбеливания
+        p1_w = p1 @ W.T
+        p2_w = p2 @ W.T
+        mahal_dist = np.linalg.norm(p1_w - p2_w)
+        
+        label_mahal = m.Text(f"Махаланобис: {mahal_dist:.2f}", color=m.DARK_GRAY, font_size=20)
+        label_mahal.move_to(label_euclid.get_center())
+        
+        
+        # 5. АНИМАЦИЯ ТРАНСФОРМАЦИИ
+        # Применяем матрицу W ко всем объектам одновременно
+        self.play(
+            m.ApplyMatrix(W, m.VGroup(ellipse, points, euclid_line, dot1, dot2)),
+            run_time=2.5
+        )
+        self.wait(0.5)
+        
+        # 6. Финальное состояние
+        # Линия теперь лежит в отбеленном пространстве, её длина = расстояние Махаланобиса
+        final_line = m.Line(axes.c2p(*p1_w), axes.c2p(*p2_w), color=m.ORANGE, stroke_width=4)
+        
+        self.play(
+            m.Transform(euclid_line, final_line),
+            m.Transform(label_euclid, label_mahal),
+            run_time=1
+        )
+        
+        line1 = m.Text("Евклидово  расстояние  не  учитывает  форму  распределения,", 
+                       font_size=18, color=m.BLACK)
+        line2 = m.Text("Махаланобис  измеряет  в  единицах  стандартного  отклонения", 
+                       font_size=18, color=m.BLACK)
+        
+        # Объединяем и выравниваем по центру
+        caption = m.VGroup(line1, line2).arrange(m.DOWN, buff=0.25)
+        caption.to_edge(m.DOWN, buff=1)  # <-- Увеличенный отступ от нижнего края
+        
+        self.play(m.Write(caption))
+        self.wait(3)
+
+class CovarianceRegularizationScene(m.Scene):
+    """12 Визуализация регуляризации ковариационной матрицы"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+        np.random.seed(42)
+
+    def construct(self):
+        # 1. Оси
+        axes = m.Axes(x_range=[-4, 4, 1], y_range=[-3, 3, 1], x_length=7, y_length=5)
+        axes.set_color(m.BLACK)
+        axes.add_coordinates()
+        axes.coordinate_labels.set_color(m.BLACK)
+        self.add(axes)
+        self.wait(0.3)
+
+        # 2. Исходная плохо обусловленная ковариационная матрица
+        angle_deg = 25
+        angle_rad = np.deg2rad(angle_deg)
+        rot = np.array([[np.cos(angle_rad), -np.sin(angle_rad)],
+                        [np.sin(angle_rad),  np.cos(angle_rad)]])
+        eigvals_orig = np.array([0.15, 3.5])
+        cov_orig = rot @ np.diag(eigvals_orig) @ rot.T
+
+        # 3. Регуляризация
+        lam = 0.8
+        cov_reg = cov_orig + lam * np.eye(2)
+        eigvals_reg, _ = np.linalg.eigh(cov_reg)
+
+        # 4. Генерация облака точек
+        L = np.linalg.cholesky(cov_orig)
+        n_points = 150
+        base_pts = np.random.randn(n_points, 2)
+        pts_coords = (base_pts @ L.T) * 0.85 
+
+        points = m.VGroup(*[m.Dot(axes.c2p(*p), radius=0.04, color=m.BLUE_E) for p in pts_coords])
+
+        # 5. Функция создания эллипса
+        def make_ellipse(eigs, angle, color, is_dashed=False, scale=2.2):
+            width = 2 * scale * np.sqrt(eigs[0])
+            height = 2 * scale * np.sqrt(eigs[1])
+            ell = m.Ellipse(width=width, height=height, color=color, stroke_width=3)
+            ell.rotate(angle)
+            ell.move_to(axes.c2p(0, 0))
+            if is_dashed:
+                ell = m.DashedVMobject(ell)  # ИСПРАВЛЕНО: без параметров
+            return ell
+
+        ellipse_solid = make_ellipse(eigvals_orig, angle_rad, m.BLUE, is_dashed=False)
+        ellipse_dashed = make_ellipse(eigvals_reg, angle_rad, m.ORANGE, is_dashed=True)
+
+        # 6. Анимация
+        self.play(m.FadeIn(points), run_time=1.5)
+        self.wait(0.5)
+        self.play(m.Create(ellipse_solid), run_time=1)
+        self.wait(0.5)
+        self.play(m.Create(ellipse_dashed), run_time=1)
+        self.wait(1)
+
+        # 7. Подпись
+        '''line1 = m.Text("Регуляризация делает оценку", font_size=20, color=m.BLACK)
+        line2 = m.Text("ковариационной матрицы более устойчивой", font_size=20, color=m.BLACK)
+        caption = m.VGroup(line1, line2).arrange(m.DOWN, buff=0.2)
+        caption.to_edge(m.DOWN, buff=1.2)
+
+        self.play(m.Write(caption))
+        self.wait(3)'''
+
+        # 8. Очистка
+        self.play(m.FadeOut(*self.mobjects))
+
+class InverseMatrixScene(LinearTransformationScene_):
+    """13 Демонстрация действия обратной матрицы: растяжение и возврат"""
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            #leave_ghost_vectors=True,  # Оставляем тени для наглядности
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # 1. Исходный вектор
+        v_start = np.array([1, 1.5, 0])
+        self.add_vector(v_start, color=m.BLUE)
+        self.wait(0.5)
+
+        # 2. Матрица A (Растяжение в 2 раза)
+        mat_A = m.Matrix([[2, 0], [0, 2]]).scale(1)
+        mat_A.to_edge(m.UP, buff=1).to_edge(m.LEFT)
+        self.play(m.Create(mat_A), run_time=0.5)
+        self.wait()
+
+        # 3. Применяем A
+        matrix_A_data = np.array([[2, 0], [0, 2]])
+        self.apply_matrix(matrix_A_data)
+        self.wait()
+
+        # 4. Матрица A^-1 (заменяем A на обратную)
+        mat_A_inv = m.Matrix([[0.5, 0], [0, 0.5]]).scale(1)
+        mat_A_inv.move_to(mat_A)
+        
+        self.play(m.ReplacementTransform(mat_A, mat_A_inv), run_time=1)
+        self.wait()
+
+        # 5. Применяем A^-1 (возвращаем вектор)
+        matrix_A_inv_data = np.array([[0.5, 0], [0, 0.5]])
+        self.apply_matrix(matrix_A_inv_data)
+        self.wait()
+
+        # 6. Убираем матрицу
+        self.play(m.Uncreate(mat_A_inv), run_time=0.5)
+
+        # 7. Финальная подпись
+        '''caption = m.Text("Обратная матрица «отменяет» преобразование", font_size=28)
+        caption.to_edge(m.DOWN, buff=1.5)
+        self.play(m.Write(caption))
+        self.wait(3)'''
+
+
+class RotationInverseScene(LinearTransformationScene_):
+    """14 Демонстрация обратной матрицы поворота: случайные точки вращаются и возвращаются"""
+    def __init__(self, **kwargs):
+        super().__init__(
+            show_coordinates=True,
+            leave_ghost_vectors=True,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        # 1. Случайные точки (строго 3D, Z=0)
+        np.random.seed(42)
+        rand_coords = np.random.uniform(-2.5, 2.5, size=(5, 3))
+        rand_coords[:, 2] = 0.0
+
+        dots = m.VGroup(*[m.Dot(p, radius=0.1, color=m.BLUE) for p in rand_coords])
+
+        # 🔑 КЛЮЧЕВАЯ СТРОКА: Именно она регистрирует точки в движке трансформаций.
+        # Без этого LinearTransformationScene игнорирует обычные Mobject'ы.
+        self.add_transformable_mobject(dots)
+        self.add(dots)
+        self.wait(0.5)
+
+        # 2. Матрица поворота A (60°)
+        angle = np.deg2rad(60)
+        c, s = np.cos(angle), np.sin(angle)
+        mat_data = np.array([[c, -s], [s, c]])
+
+        # Стиль матрицы (как вам нравилось): числа с 2 знаками, позиция слева-вверху
+        mat_A = m.Matrix([[f"{c:.2f}", f"{-s:.2f}"], [f"{s:.2f}", f"{c:.2f}"]])
+        mat_A.scale(1).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+
+        self.play(m.Create(mat_A), run_time=0.5)
+        self.wait()
+
+        # 3. Применяем поворот (точки теперь двигаются вместе с сеткой)
+        self.apply_matrix(mat_data)
+        self.wait()
+
+        # 4. Обратная матрица A⁻¹
+        mat_inv_data = np.array([[c, s], [-s, c]])
+        mat_A_inv = m.Matrix([[f"{c:.2f}", f"{s:.2f}"], [f"{-s:.2f}", f"{c:.2f}"]])
+        mat_A_inv.scale(1).move_to(mat_A)
+
+        self.play(m.ReplacementTransform(mat_A, mat_A_inv), run_time=1)
+        self.wait()
+
+        # 5. Обратный поворот (возврат в исходное положение)
+        self.apply_matrix(mat_inv_data)
+        self.wait()
+
+        # 6. Убираем матрицу и выводим подпись (поднята выше, как вы просили)
+        self.play(m.Uncreate(mat_A_inv), run_time=0.5)
+
+        # Создаем две строки текста
+        '''line1 = m.Text("Обратная матрица", font_size=28)
+        line2 = m.Text("поворачивает пространство обратно", font_size=28)
+        
+        # Группируем их и выстраиваем вертикально с небольшим отступом (0.2)
+        caption = m.VGroup(line1, line2).arrange(m.DOWN, buff=0.2)
+        
+        # Сдвигаем всю группу к нижнему краю
+        caption.to_edge(m.DOWN, buff=1) 
+        
+        self.play(m.Write(caption))
+        self.wait(3)'''
+
+class DegenerateMatrixScene(m.Scene):
+    """15 Сравнение невырожденной и вырожденной матриц: деформация vs схлопывание"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        # 1. Левая плоскость (Невырожденная)
+        plane_L = m.NumberPlane(
+            x_range=[-3, 3, 1],
+            y_range=[-3, 3, 1],
+            x_length=4.5,
+            y_length=4.5,
+            background_line_style={
+                "stroke_color": m.GRAY,
+                "stroke_width": 1,
+                "stroke_opacity": 0.5
+            },
+            axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+        )
+        plane_L.shift(m.LEFT * 3.2)
+
+        # 2. Правая плоскость (Вырожденная)
+        plane_R = m.NumberPlane(
+            x_range=[-3, 3, 1],
+            y_range=[-3, 3, 1],
+            x_length=4.5,
+            y_length=4.5,
+            background_line_style={
+                "stroke_color": m.GRAY,
+                "stroke_width": 1,
+                "stroke_opacity": 0.5
+            },
+            axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+        )
+        plane_R.shift(m.RIGHT * 3.2)
+
+        self.add(plane_L, plane_R)
+        self.wait(0.5)
+
+        # 3. Матрицы
+        mat_non = np.array([[2, 1], [1, 2]])  # det = 3
+        mat_sing = np.array([[1, 2], [2, 4]]) # det = 0
+
+        # Визуализация левой матрицы (сдвинута левее графика)
+        m_L = m.Matrix(mat_non, element_to_mobject_config={"font_size": 32, "color": m.BLUE})
+        m_L.scale(0.7)
+        m_L.get_brackets().set_color(m.BLACK)
+        m_L.move_to(m.LEFT * 4.5 + m.UP * 2)  # ИСПРАВЛЕНО: левее
+
+        label_L = m.VGroup(
+            m.Text("Невырожденная", font_size=16, color=m.BLUE),
+            m.Text("(det ≠ 0)", font_size=16, color=m.BLUE)
+        ).arrange(m.DOWN)
+        label_L.next_to(m_L, m.DOWN)
+
+        # Визуализация правой матрицы (сдвинута левее графика)
+        m_R = m.Matrix(mat_sing, element_to_mobject_config={"font_size": 32, "color": m.RED})
+        m_R.scale(0.7)
+        m_R.get_brackets().set_color(m.BLACK)
+        m_R.move_to(m.RIGHT * 1 + m.UP * 2)  # ИСПРАВЛЕНО: левее (между центром и правой сеткой)
+
+        label_R = m.VGroup(
+            m.Text("Вырожденная", font_size=16, color=m.RED),
+            m.Text("(det = 0)", font_size=16, color=m.RED)
+        ).arrange(m.DOWN)
+        label_R.next_to(m_R, m.DOWN)
+
+        self.play(m.Write(m_L), m.Write(label_L), m.Write(m_R), m.Write(label_R))
+        self.wait(1)
+
+        # 4. Анимация трансформации
+        self.play(
+            m.ApplyMatrix(mat_non, plane_L, about_point=plane_L.get_center()),
+            m.ApplyMatrix(mat_sing, plane_R, about_point=plane_R.get_center()),
+            run_time=3
+        )
+        self.wait(1)
+
+        # 5. Финальная подпись
+        line1 = m.Text("Вырожденная матрица «схлопывает»", font_size=22)
+        line2 = m.Text("пространство в линию", font_size=22)
+        caption = m.VGroup(line1, line2).arrange(m.DOWN, buff=0.1)
+        caption.to_edge(m.DOWN, buff=1)
+        self.play(m.Write(caption))
+        self.wait(3)
+
+        self.play(m.FadeOut(*self.mobjects))
+
+
+class EigenvectorScene(LinearTransformationScene_):
+    """16 Демонстрация собственных векторов для матрицы [[2, 1], [0, 3]]"""
+    def __init__(self, **kwargs):
+        super().__init__(
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            **kwargs
+        )
+
+    def construct(self):
+        matrix = [[2, 1], [0, 3]]
+        scale = 1  # можно уменьшить, чтобы после трансформации всё умещалось в ±3.2
+
+        # 1. Обычные векторы (СЕРЫЕ) -> заведомо НЕ собственные
+        # При умножении на эту матрицу они испытают сдвиг и поворот
+        self.add_vector([0, 1.5*scale], color=m.GRAY)
+        self.add_vector([1.5*scale, 0.5*scale], color=m.GRAY)
+        self.add_vector([-1.0*scale, 1.0*scale], color=m.GRAY)
+        self.add_vector([0.5*scale, -1.0*scale], color=m.GRAY)
+
+        # 2. Собственные векторы (ЦВЕТНЫЕ) -> только растягиваются, угол не меняется
+        # Для A=[[2,1],[0,3]] собственные вектора: [1,0] (λ=2) и [1,1] (λ=3)
+        self.add_vector([1*scale, 0], color=m.RED)
+        self.add_vector([1*scale, 1*scale], color=m.BLUE)
+
+        self.wait(0.5)
+
+        # 3. Матрица
+        mat_obj = m.Matrix(matrix, element_to_mobject_config={"font_size": 24, "color": m.BLACK})
+        mat_obj.scale(1)
+        mat_obj.get_brackets().set_color(m.BLACK)
+        mat_obj.to_edge(m.UP, buff=1).to_edge(m.LEFT)
+        self.play(m.Create(mat_obj), run_time=0.5)
+        self.wait()
+
+        # 4. Трансформация (LinearTransformationScene сама плавно анимирует все add_vector)
+        self.apply_matrix(matrix)
+        self.wait()
+
+        # 5. Подписи λ (координаты вычислены аналитически: A @ v_исходный)
+        # [0.6, 0]   -> [1.2, 0]
+        # [0.6, 0.6] -> [1.8, 1.8]
+        label1 = m.MathTex(r"\lambda_1 = 2", color=m.RED, font_size=28)
+        label1.next_to([1.2, 0, 0], m.DR, buff=0.36)
+
+        label2 = m.MathTex(r"\lambda_2 = 3", color=m.BLUE, font_size=28)
+        label2.next_to([1.8, 1.8, 0], m.DR, buff=0.25)
+
+        self.play(m.FadeIn(label1), m.FadeIn(label2))
+        self.wait(1)
+
+        # 6. Финальная подпись
+        '''line1 = m.Text("Собственные векторы не поворачиваются,", font_size=22)
+        line2 = m.Text("только растягиваются на величину \u03BB", font_size=22)
+        caption = m.VGroup(line1, line2).arrange(m.DOWN, buff=0.1)
+        caption.to_edge(m.DOWN, buff=1)
+        self.play(m.Write(caption))
+        self.wait(3)'''
+
+class EigenvalueCollapseScene(m.Scene):
+    """17 Плавное схлопывание пространства при (A - λI) → 0 для обоих собственных чисел (2 и 3)"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        A = np.array([[2, 1], [0, 3]])
+        
+        # 1. Чистая сетка
+        plane = m.NumberPlane(
+            x_range=[-3, 3, 1], y_range=[-3, 3, 1],
+            x_length=6, y_length=6,
+            background_line_style={"stroke_color": m.GRAY, "stroke_opacity": 0.4},
+            axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+        )
+        self.add(plane)
+
+        # 2. Векторы
+        vectors = m.VGroup(
+            m.Arrow(m.ORIGIN, [0.8, 0, 0], color=m.RED, buff=0, stroke_width=2),   
+            m.Arrow(m.ORIGIN, [0.6, 0.6, 0], color=m.BLUE, buff=0, stroke_width=2), 
+            m.Arrow(m.ORIGIN, [0, 0.8, 0], color=m.GRAY, buff=0, stroke_width=1.5),
+            m.Arrow(m.ORIGIN, [-0.6, 0.6, 0], color=m.GRAY, buff=0, stroke_width=1.5)
+        )
+        self.add(vectors)
+
+        # 3. Динамическая матрица (A - λI)
+        lam_tracker = m.ValueTracker(0)
+
+        e11 = m.DecimalNumber(2.0, num_decimal_places=1, color=m.BLACK, font_size=28)
+        e12 = m.DecimalNumber(1.0, num_decimal_places=1, color=m.BLACK, font_size=28)
+        e21 = m.DecimalNumber(0.0, num_decimal_places=1, color=m.BLACK, font_size=28)
+        e22 = m.DecimalNumber(3.0, num_decimal_places=1, color=m.BLACK, font_size=28)
+
+        e11.add_updater(lambda m: m.set_value(2.0 - lam_tracker.get_value()))
+        e22.add_updater(lambda m: m.set_value(3.0 - lam_tracker.get_value()))
+
+        mat_grid = m.VGroup(
+            m.VGroup(e11, e12).arrange(m.RIGHT, buff=0.6),
+            m.VGroup(e21, e22).arrange(m.RIGHT, buff=0.6)
+        ).arrange(m.DOWN, buff=0.3)
+
+        left_bracket = m.MathTex("\\left[")
+        right_bracket = m.MathTex("\\right]")
+        
+        left_bracket.set_color(m.BLACK)
+        right_bracket.set_color(m.BLACK)
+
+        # Подгонка высоты (сначала задаем размер...)
+        bracket_h = mat_grid.get_height() * 1.15
+        left_bracket.set_height(bracket_h)
+        right_bracket.set_height(bracket_h)
+
+        # ...затем позиционируем относительно сетки
+        left_bracket.next_to(mat_grid, m.LEFT, buff=0.1)
+        right_bracket.next_to(mat_grid, m.RIGHT, buff=0.1)
+
+        mat_dynamic = m.VGroup(left_bracket, mat_grid, right_bracket)
+        mat_dynamic.move_to([-2.8, 1.8, 0])
+        self.add(mat_dynamic)
+
+        # 4. Индикатор λ
+        lam_display = m.DecimalNumber(0, num_decimal_places=2, color=m.BLACK, font_size=24)
+        lam_display.add_updater(lambda d: d.set_value(lam_tracker.get_value()))
+        lam_label = m.Text("λ = ", font_size=22, color=m.BLACK).next_to(lam_display, m.LEFT)
+        lam_group = m.VGroup(lam_label, lam_display)
+        lam_group.next_to(mat_dynamic, m.RIGHT, buff=0.8)
+        self.add(lam_group)
+
+        # 🔑 ИСПРАВЛЕНИЕ: Формула тоже сделана черной для лучшей читаемости
+        formula = m.Text("(A - λI)", font_size=18, color=m.BLACK).next_to(mat_dynamic, m.DOWN, buff=0.4)
+        self.add(formula)
+
+        # 5. Логика трансформации
+        plane_submobs = plane.family_members_with_points()
+        plane_orig_pts = [submob.get_points().copy() for submob in plane_submobs]
+
+        vec_submobs = vectors.family_members_with_points()
+        vec_orig_pts = [submob.get_points().copy() for submob in vec_submobs]
+
+        def update_transform(mob, orig_pts_list, submobs_list):
+            lam = lam_tracker.get_value()
+            M = A - lam * np.eye(2)
+            for submob, orig_pts in zip(submobs_list, orig_pts_list):
+                new_pts = orig_pts.copy()
+                new_pts[:, :2] = (M @ new_pts[:, :2].T).T
+                submob.set_points(new_pts)
+
+        plane.add_updater(lambda m: update_transform(m, plane_orig_pts, plane_submobs))
+        vectors.add_updater(lambda m: update_transform(m, vec_orig_pts, vec_submobs))
+
+        # 6. АНИМАЦИЯ: Два этапа
+        text1 = m.Text("Коллапс при λ₁ = 2", font_size=24, color=m.RED).to_edge(m.DOWN, buff=1.5)
+        self.play(lam_tracker.animate.set_value(2), run_time=3)
+        self.wait(0.5)
+        self.play(m.Write(text1), run_time=1)
+        self.wait(1.5)
+        self.play(m.FadeOut(text1))
+
+        text2 = m.Text("Коллапс при λ₂ = 3", font_size=24, color=m.BLUE).to_edge(m.DOWN, buff=1.5)
+        self.play(lam_tracker.animate.set_value(3), run_time=3)
+        self.wait(0.5)
+        self.play(m.Write(text2), run_time=1)
+        self.wait(2)
+
+        plane.clear_updaters()
+        vectors.clear_updaters()
+        self.play(m.FadeOut(*self.mobjects))
+
+class EigenvalueInterpretationScene(m.Scene):
+    """18 Геометрическая интерпретация разных значений """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        # 1. Чистая сетка (фон)
+        plane = m.NumberPlane(
+            x_range=[-4, 4, 1], y_range=[-3, 3, 1],
+            x_length=8, y_length=6,
+            background_line_style={"stroke_color": m.GRAY, "stroke_opacity": 0.4},
+            axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+        )
+        self.add(plane)
+
+        # 2. Исходный вектор (серый, остается на экране всё время как эталон)
+        # Длина 2.0, чтобы при умножении на 2 он был 4.0 (влезает в экран)
+        v_input = m.Arrow(m.ORIGIN, [2, 0, 0], color=m.GRAY, buff=0, stroke_width=2)
+        v_input_label = m.Text("Исходный вектор v", font_size=16, color=m.GRAY)
+        v_input_label.next_to(v_input, m.UP, buff=0.3)
+        
+        self.play(m.Create(v_input), m.Write(v_input_label))
+        self.wait(0.5)
+
+        # 3. Данные для 5 примеров
+        # (lambda, color, text_description)
+        cases = [
+            (2.0, m.RED, "Растяжение (\u03BB = 2)"),
+            (0.5, m.GREEN, "Сжатие (\u03BB = 0.5)"),
+            (1.0, m.BLUE, "Без изменений (\u03BB = 1)"),
+            (0.0, m.YELLOW, "Коллапс (\u03BB = 0)"),
+            (-1.0, m.PURPLE, "Разворот (\u03BB = -1)")
+        ]
+
+        current_text = None
+        current_vector = None
+
+        # 4. Проход по всем примерам
+        for lam, color, desc in cases:
+            # Вычисляем конец вектора: v_result = v_input * lam
+            # Исходный вектор [2, 0], значит результат [2*lam, 0]
+            end_point = [2 * lam, 0, 0]
+            
+            # Текст описания
+            new_text = m.Text(desc, font_size=24, color=color)
+            new_text.to_edge(m.DOWN, buff=1.0)
+
+            # Логика вектора результата
+            if lam == 0:
+                # Для 0 вектор исчезает, оставляем точку
+                new_vector = m.Dot(m.ORIGIN, color=color, radius=0.1)
+            else:
+                # Для остальных - стрелка
+                new_vector = m.Arrow(m.ORIGIN, end_point, color=color, buff=0, stroke_width=3)
+
+            # Анимация смены сцен
+            # Сначала убираем старый результат и текст (если есть)
+            if current_text:
+                self.play(m.FadeOut(current_text), m.FadeOut(current_vector))
+            
+            # Показываем новые
+            self.play(
+                m.Create(new_vector), 
+                m.Write(new_text), 
+                run_time=1.5
+            )
+            self.wait(1)
+
+            # Сохраняем ссылки для следующей итерации
+            current_text = new_text
+            current_vector = new_vector
+
+        # Финальная пауза
+        self.wait(2)
+        self.play(m.FadeOut(*self.mobjects))
+
+class EigenvalueInterpretationScene2(m.Scene):
+    """18 Геометрическая интерпретация разных значений собственных чисел (учебный стиль)"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        # Заголовок (единый стиль с другими сценами)
+        title = m.Text("Геометрическая интерпретация собственных значений", 
+                       font_size=28, color=m.DARK_GRAY)
+        title.to_edge(m.UP, buff=0.7)
+        self.play(m.Write(title), run_time=1)
+        self.wait(0.3)
+
+        # Собственный вектор вдоль оси X (инвариантное направление)
+        eigen_vec = np.array([2, 0])
+
+        cases = [
+            (2.0,  "λ = 2   (растяжение)"),
+            (0.5,  "λ = 0.5 (сжатие)"),
+            (1.0,  "λ = 1   (без изменений)"),
+            (0.0,  "λ = 0   (коллапс в линию)"),
+            (-1.0, "λ = −1  (разворот на 180°)")
+        ]
+
+        for lam, desc in cases:
+            mat = np.array([[lam, 0], [0, 1]])
+
+            # 1. Крупная матрица-якорь (учебный стиль: сверху, чётко)
+            mat_obj = m.Matrix(mat, element_to_mobject_config={"color": m.DARK_GRAY, "font_size": 28})
+            mat_obj.get_brackets().set_color(m.BLACK)
+            mat_obj.scale(1.1)
+            mat_obj.move_to([-3.5, 1.0, 0])
+            self.play(m.Create(mat_obj), run_time=0.5)
+
+            # 2. Основная сетка (будет трансформироваться)
+            plane = m.NumberPlane(
+                x_range=[-4, 4, 1], y_range=[-4, 4, 1],
+                background_line_style={"stroke_color": m.GRAY, "stroke_width": 1.2},
+                axis_config={"stroke_color": m.DARK_GRAY, "stroke_width": 2}
+            )
+            self.play(m.FadeIn(plane), run_time=0.4)
+
+            # 3. Призрачная сетка (исходное состояние для сравнения)
+            ghost = plane.copy()
+            ghost.set_stroke(color=m.GRAY_E, opacity=0.25, width=1)
+            self.add(ghost)  # Добавляем статично
+
+            # 4. Собственный вектор (фиолетовый акцент)
+            v_eigen = m.Vector(eigen_vec, color=m.PURPLE, buff=0)
+            self.play(m.Create(v_eigen), run_time=0.5)
+
+            # Целевой вектор
+            target = m.Dot(color=m.PURPLE) if lam == 0 else m.Vector(mat @ eigen_vec, color=m.PURPLE)
+
+            # 5. Анимация: матрица действует на пространство
+            self.play(
+                plane.animate.apply_matrix(mat, about_point=m.ORIGIN),
+                m.Transform(v_eigen, target, path_arc=0),
+                run_time=2.3
+            )
+
+            # 6. Подпись (тёмная, учебная)
+            label = m.Text(desc, font_size=24, color=m.DARK_GRAY)
+            label.next_to(mat_obj, m.DOWN, buff=0.25)
+            self.play(m.FadeIn(label), run_time=0.3)
+            self.wait(1.0)
+
+            # 7. Очистка перед следующим кейсом
+            self.play(
+                m.FadeOut(plane), m.FadeOut(ghost), 
+                m.FadeOut(v_eigen), m.FadeOut(mat_obj), m.FadeOut(label),
+                run_time=0.6
+            )
+            self.wait(0.2)
+
+        self.play(m.FadeOut(title), run_time=0.5)
+        self.wait(1)
+
+class PCAPrincipalComponentScene(m.Scene):
+    """19 Визуализация главных компонент: собственные векторы ковариационной матрицы"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        # 1. Координатная плоскость
+        plane = m.NumberPlane(
+            x_range=[-5, 5, 1], y_range=[-5, 5, 1],
+            x_length=9, y_length=9,
+            background_line_style={"stroke_color": m.GRAY, "stroke_opacity": 0.3},
+            axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+        )
+        self.add(plane)
+
+        # 2. Генерация данных: эллиптическое облако точек
+        np.random.seed(42)
+        n_points = 120
+        
+        # Ковариационная матрица с собственными значениями 5.2 и 0.3
+        # Поворот на 30° для наглядности
+        angle = np.deg2rad(30)
+        eigvals = np.array([5.2, 0.3])
+        rot = np.array([[np.cos(angle), -np.sin(angle)],
+                        [np.sin(angle),  np.cos(angle)]])
+        cov = rot @ np.diag(eigvals) @ rot.T
+        
+        # Генерируем точки через разложение Холецкого
+        L = np.linalg.cholesky(cov)
+        base_pts = np.random.randn(n_points, 2)
+        pts = base_pts @ L.T
+        
+        # Создаём точки на сцене
+        dots = m.VGroup(*[
+            m.Dot(plane.c2p(p[0], p[1]), radius=0.04, color=m.BLUE, fill_opacity=0.5) 
+            for p in pts
+        ])
+        self.play(m.FadeIn(dots), run_time=2)
+        self.wait(0.5)
+
+        # 3. Собственные векторы (через начало координат)
+        # Первый: длинная ось (λ₁ = 5.2) — красный
+        ev1_dir = rot[:, 0]  # Единичный вектор направления
+        ev1_len = np.sqrt(eigvals[0]) * 0.85  # Длина для визуализации
+        ev1 = ev1_dir * ev1_len
+        
+        ev1_arrow = m.Arrow(
+            plane.c2p(0, 0), plane.c2p(*ev1), 
+            color=m.RED, buff=0, stroke_width=4, tip_length=0.2
+        )
+        label1 = m.MathTex(r"\lambda_1 = 5.2", color=m.RED, font_size=26)
+        label1.next_to(ev1_arrow.get_end(), m.UR, buff=0.4)
+        
+        # Второй: короткая ось (λ₂ = 0.3) — синий
+        ev2_dir = rot[:, 1]
+        ev2_len = np.sqrt(eigvals[1]) * 0.85
+        ev2 = ev2_dir * ev2_len
+        
+        ev2_arrow = m.Arrow(
+            plane.c2p(0, 0), plane.c2p(*ev2), 
+            color=m.BLUE, buff=0, stroke_width=2, tip_length=0.15
+        )
+        label2 = m.MathTex(r"\lambda_2 = 0.3", color=m.BLUE, font_size=26)
+        label2.next_to(ev2_arrow.get_end(), m.UL, buff=0.4)
+        
+        # Показываем собственные векторы
+        self.play(
+            m.Create(ev1_arrow), m.Write(label1),
+            m.Create(ev2_arrow), m.Write(label2),
+            run_time=2
+        )
+        self.wait(1)
+
+        # 4. Подпись о главных компонентах
+        caption1 = m.Text(
+            "Собственные векторы = главные компоненты",
+            font_size=22, color=m.BLACK
+        ).to_edge(m.UP, buff=1)
+        self.play(m.Write(caption1))
+        self.wait(1)
+
+        # 5. Проекция на первую главную компоненту
+        # Показываем линию главной компоненты (продлеваем за пределы стрелки)
+        proj_line = m.Line(
+            plane.c2p(*(-ev1 * 2.5)),
+            plane.c2p(*(ev1 * 2.5)),
+            color=m.RED, stroke_width=2, stroke_opacity=0.4
+        )
+        self.play(m.Create(proj_line), run_time=1)
+        self.wait(0.5)
+        
+        # Показываем проекцию на примере 5 характерных точек
+        demo_indices = [10, 35, 60, 85, 110]
+        demo_lines = m.VGroup()
+        demo_proj_dots = m.VGroup()
+        
+        for idx in demo_indices:
+            p = pts[idx]
+            # Проекция точки на направление ev1: proj = (p · ev1_dir) * ev1_dir
+            proj_scalar = np.dot(p, ev1_dir)
+            proj_point = proj_scalar * ev1_dir
+            
+            # Пунктирная линия проекции
+            proj_line_demo = m.DashedLine(
+                plane.c2p(*p), plane.c2p(*proj_point),
+                color=m.GRAY, stroke_width=1, stroke_opacity=0.6
+            )
+            demo_lines.add(proj_line_demo)
+            
+            # Точка проекции (красная)
+            proj_dot = m.Dot(
+                plane.c2p(*proj_point),
+                radius=0.06, color=m.RED, fill_opacity=0.9
+            )
+            demo_proj_dots.add(proj_dot)
+        
+        proj_caption = m.Text(
+            "Проекция на 1-ю главную компоненту",
+            font_size=20, color=m.BLACK
+        ).to_edge(m.DOWN, buff=1.2)
+        
+        self.play(
+            m.Create(demo_lines),
+            m.FadeIn(demo_proj_dots),
+            m.Write(proj_caption),
+            run_time=2
+        )
+        self.wait(1)
+        
+        # 6. Финальная подпись
+        final_caption = m.Text(
+            "Сохраняет основную структуру данных",
+            font_size=20, color=m.BLACK
+        ).to_edge(m.DOWN, buff=1.2)
+        
+        self.play(
+            m.Transform(proj_caption, final_caption),
+            run_time=1
+        )
+        self.wait(3)
+        
+        self.play(m.FadeOut(*self.mobjects))
+
+class SpectralDecompositionScene(m.Scene):
+    """20 Спектральное разложение: 3 шага с сохранением исходной сетки"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def construct(self):
+        # 1. СТАТИЧНАЯ СЕТКА (РЕФЕРЕНС)
+        # Она останется на месте, чтобы было видно исходное положение
+        plane_static = m.NumberPlane(
+            x_range=[-5, 5, 1], y_range=[-5, 5, 1],
+            x_length=9, y_length=9,
+            background_line_style={"stroke_color": m.GRAY, "stroke_opacity": 0.3},
+            axis_config={"stroke_color": m.BLACK, "stroke_width": 2}
+        )
+        self.add(plane_static)
+
+        # 2. ТРАНСФОРМИРУЕМАЯ СЕТКА (ЦВЕТНАЯ)
+        # Она будет изменяться, показывая деформацию
+        plane_dynamic = m.NumberPlane(
+            x_range=[-5, 5, 1], y_range=[-5, 5, 1],
+            x_length=9, y_length=9,
+            background_line_style={"stroke_color": m.BLUE, "stroke_opacity": 0.5},
+            axis_config={"stroke_color": m.BLUE, "stroke_width": 3}
+        )
+        self.add(plane_dynamic)
+
+        # 3. Матрица A и спектральное разложение
+        A = np.array([[4, 2], [2, 3]], dtype=float)
+        eigvals, eigvecs = np.linalg.eigh(A)
+        
+        idx = eigvals.argsort()[::-1]
+        eigvals = eigvals[idx]
+        V = eigvecs[:, idx]
+        Lambda = np.diag(eigvals)
+        VT = V.T
+
+        # 4. Объект (круг), уменьшен для гарантии попадания в экран
+        # max_eigenval ≈ 5.37. Радиус 0.7 -> полусось 3.75 (влезает в [-5, 5])
+        shape = m.Circle(radius=0.7, color=m.RED, fill_opacity=0.3, stroke_width=4)
+        shape.move_to(m.ORIGIN)
+        self.add(shape)
+
+        # ШАГ 1: Поворот (V^T) 
+        mat_VT = m.Matrix(np.round(VT, 2), element_to_mobject_config={"font_size": 22, "color": m.BLACK})
+        mat_VT.scale(0.8).get_brackets().set_color(m.BLACK)
+        mat_VT.move_to([-4.2, 1.2, 0])
+
+        text_VT = m.Text(
+            "1. Поворот V^T:\nОси совпадают с\nсобственными направлениями",
+            font_size=18, color=m.BLACK
+        ).to_edge(m.RIGHT, buff=1.5).shift(m.UP * 1.5)
+
+        self.play(m.Write(mat_VT), m.Write(text_VT))
+        # Трансформируем ТОЛЬКО динамическую сетку и фигуру
+        self.play(
+            plane_dynamic.animate.apply_matrix(VT), 
+            shape.animate.apply_matrix(VT), 
+            run_time=2
+        )
+        self.wait(0.5)
+
+        # ШАГ 2: Масштаб (Λ)
+        mat_Lam = m.Matrix(np.round(Lambda, 2), element_to_mobject_config={"font_size": 22, "color": m.BLACK})
+        mat_Lam.scale(0.8).get_brackets().set_color(m.BLACK)
+        mat_Lam.move_to(mat_VT)
+
+        text_Lam = m.Text(
+            "2. Масштаб Λ:\nРастяжение вдоль осей\nна собственные числа",
+            font_size=18, color=m.BLACK
+        ).move_to(text_VT)
+
+        self.play(
+            m.ReplacementTransform(mat_VT, mat_Lam),
+            m.ReplacementTransform(text_VT, text_Lam)
+        )
+        self.play(
+            plane_dynamic.animate.apply_matrix(Lambda), 
+            shape.animate.apply_matrix(Lambda), 
+            run_time=2
+        )
+        self.wait(0.5)
+
+        # 3: Обратный поворот (V) 
+        mat_V = m.Matrix(np.round(V, 2), element_to_mobject_config={"font_size": 22, "color": m.BLACK})
+        mat_V.scale(0.8).get_brackets().set_color(m.BLACK)
+        mat_V.move_to(mat_Lam)
+
+        text_V = m.Text(
+            "3. Поворот V:\nВозврат в исходную\nсистему координат",
+            font_size=18, color=m.BLACK
+        ).move_to(text_Lam)
+
+        self.play(
+            m.ReplacementTransform(mat_Lam, mat_V),
+            m.ReplacementTransform(text_Lam, text_V)
+        )
+        self.play(
+            plane_dynamic.animate.apply_matrix(V), 
+            shape.animate.apply_matrix(V), 
+            run_time=2
+        )
+        self.wait(1)
+
+        self.play(m.FadeOut(mat_V), m.FadeOut(text_V), run_time=1)
+
+        formula = m.MathTex("A = V \\Lambda V^T", font_size=40, color=m.BLACK)
+        formula.to_edge(m.UP, buff=1.0)
+
+        '''explanation = m.Text(
+            "Любое действие матрицы = Поворот + Масштаб + Поворот",
+            font_size=20, color=m.GRAY
+        ).next_to(formula, m.DOWN)
+
+        self.play(m.Write(formula), m.Write(explanation), run_time=2)
+        self.wait(3)
+        
+        self.play(m.FadeOut(*self.mobjects))'''
+
+class MatrixPowersScene(m.Scene):
+    """Демонстрация степеней матрицы: рост и затухание собственных компонент"""
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.camera.background_color = m.WHITE
+
+    def create_2d_grid(self, size=6, color=m.GRAY, opacity=0.3):
+        """Создаёт простую 2D сетку из линий"""
+        lines = m.VGroup()
+        for i in range(-size, size + 1):
+            # Вертикальные линии
+            lines.add(m.Line(
+                np.array([i, -size, 0]),
+                np.array([i, size, 0]),
+                color=color, stroke_opacity=opacity, stroke_width=1
+            ))
+            # Горизонтальные линии
+            lines.add(m.Line(
+                np.array([-size, i, 0]),
+                np.array([size, i, 0]),
+                color=color, stroke_opacity=opacity, stroke_width=1
+            ))
+        return lines
+
+    def construct(self):
+        # Статичная фоновая сетка (2D)
+        grid_static = self.create_2d_grid(size=6, color=m.GRAY, opacity=0.2)
+        # Оси координат (более жирные)
+        axes = m.VGroup(
+            m.Line(np.array([-6, 0, 0]), np.array([6, 0, 0]), color=m.BLACK, stroke_width=2),
+            m.Line(np.array([0, -6, 0]), np.array([0, 6, 0]), color=m.BLACK, stroke_width=2)
+        )
+        self.add(grid_static, axes)
+
+        # Трансформируемая сетка (2D)
+        grid_dynamic = self.create_2d_grid(size=6, color=m.BLUE_E, opacity=0.5)
+        self.add(grid_dynamic)
+
+        # Матрица A (округлена, опущена ниже)
+        theta = np.deg2rad(30)
+        V = np.array([[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]])
+        Lambda = np.diag([1.5, 0.5])
+        A = V @ Lambda @ V.T
+
+        mat_A = m.Matrix(np.round(A, 2), element_to_mobject_config={"font_size": 22, "color": m.BLACK})
+        mat_A.scale(0.8).get_brackets().set_color(m.BLACK)
+        mat_A.move_to([-4.2, 2.2, 0])
+        self.play(m.Write(mat_A))
+
+        # Собственные направления
+        v1_dir = V[:, 0]
+        v2_dir = V[:, 1]
+        
+        axis1 = m.DashedLine(
+            np.array([-v1_dir[0] * 5, -v1_dir[1] * 5, 0]),
+            np.array([v1_dir[0] * 5, v1_dir[1] * 5, 0]),
+            color=m.RED, stroke_width=2, stroke_opacity=0.6
+        )
+        axis2 = m.DashedLine(
+            np.array([-v2_dir[0] * 5, -v2_dir[1] * 5, 0]),
+            np.array([v2_dir[0] * 5, v2_dir[1] * 5, 0]),
+            color=m.BLUE, stroke_width=2, stroke_opacity=0.6
+        )
+        self.play(m.Create(axis1), m.Create(axis2))
+        
+        label_lam1 = m.MathTex(r"\lambda_1 = 1.5", color=m.RED, font_size=24).next_to(axis1.get_end(), m.UR, buff=0.5)
+        label_lam2 = m.MathTex(r"\lambda_2 = 0.5", color=m.BLUE, font_size=24).next_to(axis2.get_end(), m.UL, buff=0.5)
+        self.play(m.Write(label_lam1), m.Write(label_lam2))
+
+        # Начальный вектор v0
+        v0 = (v1_dir + v2_dir) * 0.6
+        vec_current = m.Arrow(np.array([0, 0, 0]), np.array([v0[0], v0[1], 0]), color=m.BLUE_E, buff=0, stroke_width=4)
+        self.play(m.Create(vec_current))
+        self.wait(0.5)
+
+        current_pos = v0
+        steps = 4
+
+        # Пошаговое умножение на A
+        for k in range(1, steps + 1):
+            new_pos = A @ current_pos
+            new_vec = m.Arrow(np.array([0, 0, 0]), np.array([new_pos[0], new_pos[1], 0]), color=m.BLUE_E, buff=0, stroke_width=4)
+
+            # Информационный блок (сдвинут ниже и правее)
+            info_step = m.Text(f"Итерация {k}", font_size=18, color=m.BLACK)
+            info_growth = m.MathTex(r"\lambda_1^k \approx", f"{1.5**k:.2f}", color=m.RED, font_size=20)
+            info_decay = m.MathTex(r"\lambda_2^k \approx", f"{0.5**k:.2f}", color=m.BLUE, font_size=20)
+            info_group = m.VGroup(info_step, info_growth, info_decay).arrange(m.DOWN, buff=0.2)
+            info_group.move_to([4.5, -1.5, 0])
+
+            # Анимация трансформации (теперь точно 2D)
+            self.play(
+                grid_dynamic.animate.apply_matrix(A),
+                m.Transform(vec_current, new_vec),
+                m.FadeIn(info_group),
+                run_time=1.5
+            )
+            self.wait(0.5)
+
+            if k < steps:
+                self.play(m.FadeOut(info_group), run_time=0.3)
+
+            current_pos = new_pos
+            vec_current = new_vec
+
+        # Финальная подпись
+        '''final_text = m.Text(
+            "Вектор выравнивается с направлением\nнаибольшего собственного числа",
+            font_size=20, color=m.BLACK
+        ).to_edge(m.DOWN, buff=1.2)
+        self.play(m.Write(final_text))
+        self.wait(3)
+        self.play(m.FadeOut(*self.mobjects))'''
+
+
+class MatrixVectorMultiplicationScene(LinearTransformationScene_):
+    """22 Умножение матрицы на вектор: линейная комбинация столбцов"""
+    def __init__(self, **kwargs):
+        LinearTransformationScene_.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=False,
+            foreground_plane_kwargs={
+                "x_range": [-4, 6, 1],
+                "y_range": [-2, 5, 1],  # Ваш диапазон
+                "x_length": 10,
+                "y_length": 7,
+                "background_line_style": {"stroke_color": m.GRAY_E, "stroke_width": 1}
+            },
+            background_plane_kwargs={
+                "x_range": [-4, 6, 1],
+                "y_range": [-2, 5, 1],
+                "x_length": 10,
+                "y_length": 7,
+                "background_line_style": {"stroke_color": m.GRAY_E, "stroke_width": 1}
+            },
+            **kwargs
+        )
+    
+    def construct(self):
+        # 1. Заголовок
+        '''title = m.Text("Умножение матрицы на вектор", font_size=36, color=m.BLACK)
+        title.to_edge(m.UP, buff=0.3)
+        self.add(title)'''
+        
+        # 2. Матрица A
+        matrix_data = np.array([[1.5, 0.5], [-0.3, 2.5]])
+        v = np.array([2, 1.5])
+        result = matrix_data @ v
+        
+        matrix_display = m.Matrix(matrix_data)
+        matrix_display.set_column_colors(m.GREEN, m.YELLOW)
+        matrix_display.to_edge(m.LEFT, buff=1.5).to_edge(m.UP, buff=0.8)
+        matrix_label = m.MathTex(r"A =", font_size=28, color=m.BLACK).next_to(matrix_display, m.LEFT, buff=0.2)
+        self.play(m.Create(matrix_label), m.Create(matrix_display), run_time=0.5)
+        self.wait()
+        
+        #  КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: берём реальную позицию (0,0) на экране
+        origin = self.plane.c2p(0, 0)
+        
+        col1 = np.array([matrix_data[0, 0], matrix_data[1, 0]])
+        col2 = np.array([matrix_data[0, 1], matrix_data[1, 1]])
+        
+        # Создаём стрелки вручную от правильного начала координат
+        arrow_col1 = m.Arrow(origin, self.plane.c2p(*col1), color=m.GREEN, buff=0)
+        arrow_col2 = m.Arrow(origin, self.plane.c2p(*col2), color=m.YELLOW, buff=0)
+        self.play(m.Create(arrow_col1), m.Create(arrow_col2), run_time=0.5)
+        
+        col1_label = m.MathTex(r"\vec{c}_1", font_size=24, color=m.GREEN)
+        col1_label.next_to(arrow_col1.get_end(), m.RIGHT, buff=0.2)
+        col2_label = m.MathTex(r"\vec{c}_2", font_size=24, color=m.YELLOW)
+        col2_label.next_to(arrow_col2.get_end(), m.RIGHT, buff=0.2)
+        self.play(m.Write(col1_label), m.Write(col2_label), run_time=0.5)
+        self.wait()
+        
+        # 4. Параллелограмм (все вершины привязаны к экранной сетке)
+        parallelogram = m.Polygon(
+            origin,
+            self.plane.c2p(*col1),
+            self.plane.c2p(*(col1 + col2)),
+            self.plane.c2p(*col2),
+            color=m.PURPLE,
+            fill_opacity=0.2,
+            stroke_width=3
+        )
+        self.play(m.Create(parallelogram), run_time=1)
+        self.wait()
+        
+        # 5. Вектор v
+        arrow_v = m.Arrow(origin, self.plane.c2p(*v), color=m.BLUE, buff=0)
+        self.play(m.Create(arrow_v), run_time=0.5)
+        
+        v_label = m.MathTex(r"\vec{v} = \begin{bmatrix} 2 \\ 1.5 \end{bmatrix}", 
+                            font_size=26, color=m.BLUE)
+        v_label.next_to(arrow_v.get_end(), m.RIGHT, buff=0.3)
+        self.play(m.Write(v_label), run_time=0.5)
+        self.wait()
+        
+        # 6. Формула умножения (теперь с квадратными скобками)
+        formula = m.MathTex(
+            r"A \cdot \vec{v} = \begin{bmatrix} 1.5 & 0.5 \\ -0.3 & 2.5 \end{bmatrix} \begin{bmatrix} 2 \\ 1.5 \end{bmatrix}",
+            font_size=24, color=m.BLACK
+        )
+        formula.next_to(matrix_display, m.DOWN, buff=0.5).align_to(matrix_display, m.LEFT)
+        self.play(m.Write(formula), run_time=1)
+        self.wait()
+        
+        # 7. Разложение (теперь с квадратными скобками)
+        decomposition = m.MathTex(
+            r"= 2 \begin{bmatrix} 1.5 \\ -0.3 \end{bmatrix} + 1.5 \begin{bmatrix} 0.5 \\ 2.5 \end{bmatrix}",
+            font_size=24, color=m.BLACK
+        )
+        decomposition.next_to(formula, m.DOWN, buff=0.2).align_to(formula, m.LEFT)
+        self.play(m.Write(decomposition), run_time=1)
+        self.wait()
+        
+        # 8. Масштабированные столбцы
+        scaled_col1 = v[0] * col1
+        scaled_col2 = v[1] * col2
+        
+        arrow_scaled1 = m.Arrow(origin, self.plane.c2p(*scaled_col1), color=m.GREEN, buff=0)
+        arrow_scaled2 = m.Arrow(origin, self.plane.c2p(*scaled_col2), color=m.YELLOW, buff=0)
+        self.play(m.Create(arrow_scaled1), m.Create(arrow_scaled2), run_time=0.5)
+        
+        coeff1 = m.MathTex(r"2 \cdot \vec{c}_1", font_size=22, color=m.GREEN)
+        coeff1.next_to(arrow_scaled1.get_end(), m.RIGHT, buff=0.2)
+        coeff2 = m.MathTex(r"1.5 \cdot \vec{c}_2", font_size=22, color=m.YELLOW)
+        coeff2.next_to(arrow_scaled2.get_end(), m.RIGHT, buff=0.2)
+        self.play(m.Write(coeff1), m.Write(coeff2), run_time=0.5)
+        self.wait()
+        
+        # 9. Сложение векторов (вектор-копия сразу создаётся в нужной позиции)
+        sum_vector = scaled_col1 + scaled_col2
+        
+        arrow_scaled2_copy = m.Arrow(
+            start=self.plane.c2p(*scaled_col1), 
+            end=self.plane.c2p(*sum_vector),
+            color=m.YELLOW, stroke_width=5, buff=0
+        )
+        self.play(m.Create(arrow_scaled2_copy), run_time=1)
+        
+        arrow_sum = m.Arrow(origin, self.plane.c2p(*sum_vector), color=m.RED, buff=0)
+        self.play(m.Create(arrow_sum), run_time=0.5)
+        
+        # 10. Результат
+        result_formula = m.MathTex(
+            r"= \begin{bmatrix} 3.75 \\ 3.15 \end{bmatrix}",
+            font_size=26, color=m.RED
+        )
+        result_formula.next_to(decomposition, m.DOWN, buff=0.2).align_to(decomposition, m.LEFT)
+        self.play(m.Write(result_formula), run_time=1)
+        
+        result_label = m.MathTex(r"\vec{w} = A\vec{v}", font_size=26, color=m.RED)
+        result_label.next_to(arrow_sum.get_end(), m.RIGHT, buff=0.3)
+        self.play(m.Write(result_label), run_time=0.5)
+        
+        # 11. Финальное объяснение
+        explanation = m.Text(
+            "Умножение матрицы на вектор = линейная комбинация столбцов",
+            font_size=24, color=m.BLACK
+        )
+        explanation.to_edge(m.DOWN, buff=0.7)
+        self.play(m.Write(explanation), run_time=1)
+        
+        self.wait(3)
 
 if __name__ == '__main__':
     import os
     from pathlib import Path
-
+ 
     SCENES = [
-        "LTExample",
-        "LT3D",
-        "LT2d23d",
-        "LT3d22d",
-        "LT2d21d",
-        "LT2d21dreversed",
-        "MatrixMatrixMul2",
-        "MatrixMatrixMulResult",
-        "MatrixMatrixMulNotSymmetrical",
-        "LT3D_scale1",
-        "LT3D_scale2",
-        "LT3D_scale2_down",
-        "LT3D_scale2_reversed",
+        #"LTExample",
+        #"LT3D",
+        #"LT2d23d",
+        #"LT3d22d",
+        #"LT2d21d",
+        #"LT2d21dreversed",
+        #"MatrixMatrixMul2",
+        #"MatrixMatrixMulResult",
+        #"MatrixMatrixMulNotSymmetrical",
+        #"LT3D_scale1",
+        #"LT3D_scale2",
+        #"LT3D_scale2_down",
+        #"LT3D_scale2_reversed",
+        #"MatrixDeterminantScene",
+        #"LinearTransformExample",
+        #"DegenerateVolume3D",
+        #"MatrixDeterminantGeometry",
+        #"DeterminantVolumeScaling3D",
+        #"DeterminantVolumeScale",
+        #'MatrixVectorMult',
+        #'RotationPlane2D',
+        #'RotationCompositionScene',
+        #'ReflectionMatrixScene',
+        #'ReflectionLineScene',
+        #'PermutationMatrixScene',
+        #'Permutation3DScene',
+        #'UpperTriangularShearScene',
+        #'UpperTriangularScene',
+        #'SymmetricMatrixScene',
+        #'CovarianceEllipseScene',
+        #'MahalanobisTwoPointsScene',
+        #'CovarianceRegularizationScene',
+        #'InverseMatrixScene',
+        #'RotationInverseScene',
+        'DegenerateMatrixScene',
+        #'EigenvectorScene',
+        #'EigenvalueCollapseScene',
+        #'EigenvalueInterpretationScene2',
+        #"PCAPrincipalComponentScene",
+        #"SpectralDecompositionScene",
+        #"MatrixPowersScene",
+        #'MatrixVectorMultiplicationScene',
     ]
     file_path = Path(__file__).resolve()
 
