@@ -38,12 +38,12 @@ class VectorsExample(Scene_):
             )
         self.wait(0.5)
 
+        self.play(x.animate.set_value(-3), y.animate.set_value(0))
+        # label.become(vector.coordinate_label(integer_labels=False))
+
         self.play(x.animate.set_value(-2.73), y.animate.set_value(-0.376))
         # label.become(vector.coordinate_label(integer_labels=False))
         self.wait(0.5)
-
-        self.play(x.animate.set_value(-3), y.animate.set_value(0))
-        # label.become(vector.coordinate_label(integer_labels=False))
         self.wait(0.5)
 
         self.wait()
@@ -55,6 +55,11 @@ class VectorShift(Scene_):
     def construct(self):
         plane = m.NumberPlane()
         self.play(m.Create(plane), run_time=0.3)
+
+        vector = m.Vector([1,2])
+        self.play(m.Create(vector))
+        label = vector.coordinate_label()
+        self.play(m.Create(label))
 
         vector = m.Vector([1,2])
         label = vector.coordinate_label()
@@ -88,15 +93,14 @@ class VectorsAsDots(Scene_):
         vecs = [
             [-1, 2],
             [3, 2],
-            [2, 3],
-            [1, 3],
+            [2, -2],
+            [1, -2],
             [4, 2],
             [-3, 1],
-            [-5, 0],
-            [-5, 3],
+            [0, 0],
             [1, 1],
             [3, -1],
-            [5, -2],
+            [-4, -2],
         ]
         vectors = []
         labels = []
@@ -218,6 +222,9 @@ class VectorsNDim(ThreeDScene_):
         self.play(x.animate.set_value(1), y.animate.set_value(-1), z.animate.set_value(-1))
         self.wait(0.5)
 
+        self.move_camera(phi=60 * m.DEGREES, theta=-85 * m.DEGREES, zoom=1, run_time=1.5)
+        self.stop_ambient_camera_rotation()
+
         self.wait(2)
 
 class _Vectorsd(ThreeDScene_):
@@ -336,23 +343,24 @@ class VectorSumTriangle(Scene_):
         self.play(m.Create(plane), run_time=0.2)
 
         v1 = m.Vector([2, 3])
-        l1 = v1.coordinate_label(integer_labels=False)
+        l1 = v1.coordinate_label(integer_labels=True)
         g1= m.VGroup(v1, l1)
         self.play(m.Create(g1))
 
         v2 = m.Vector([1, -1], color=m.YELLOW)
-        l2 = v2.coordinate_label(integer_labels=False, color=m.YELLOW)
+        self.play(m.Create(m.Vector([1, -1], color=m.YELLOW)), run_time=0.01)
+        l2 = v2.coordinate_label(integer_labels=True, color=m.YELLOW)
         g2= m.VGroup(v2, l2)
         self.play(m.Create(g2))
 
         self.play(v2.animate.shift(v1.get_end()))
         self.wait(0.5)
 
-        self.remove(l2)
+        # self.remove(l2)
         self.wait(0.5)
 
         v3 = m.Vector([3, 2], color=m.PINK)
-        l3 = v3.coordinate_label(integer_labels=False, color=m.PINK)
+        l3 = v3.coordinate_label(integer_labels=True, color=m.PINK)
         g3= m.VGroup(v3, l3)
         self.play(m.Create(g3))
 
@@ -387,7 +395,7 @@ class VectorSumParallelogram(Scene_):
         self.play(v12.animate.shift(v2.get_end()))
         self.wait(0.5)
 
-        self.remove(l2)
+        # self.remove(l2)
         self.wait(0.5)
 
         v3 = m.Vector([3, 2], color=m.PINK)
@@ -414,7 +422,7 @@ class VectorSumScaling(Scene_):
             int(s.get_value() * 2 * 100) / 100, 
             int(s.get_value() * 3 * 100) / 100
             ]))
-        self.play(m.Create(v1))
+        self.play(m.Create(s1))
 
         v2 = m.always_redraw(lambda: m.Vector([
             int(s.get_value() * 1 * 100) / 100, 
@@ -476,7 +484,7 @@ class VectorLinearCombine(Scene_):
         v1 = m.always_redraw(lambda: m.Vector([
             int(a.get_value() * x1 * 100) / 100, 
             int(a.get_value() * x2 * 100) / 100
-            ]))
+            ], color=m.BLUE))
         self.play(m.Create(v1), run_time=0.3)
 
         v2 = m.always_redraw(lambda: m.Vector([
@@ -486,7 +494,7 @@ class VectorLinearCombine(Scene_):
         self.play(m.Create(v2), run_time=0.3)
 
         text = m.always_redraw(lambda: 
-                m.Text("A = {:.2f}; B = {:.2f}".format(a.get_value(), b.get_value())).shift(m.UP * 3.5))
+                m.Text("A = {:.2f}; B = {:.2f}".format(a.get_value(), b.get_value())).shift(m.UP * 3.2))
         self.play(m.Write(text), run_time=0.3)
 
         # v21 = m.Vector([1, -1], color=m.YELLOW)
@@ -501,37 +509,41 @@ class VectorLinearCombine(Scene_):
             int((a.get_value() * x1 + b.get_value() * y1) * 100) / 100, 
             int((a.get_value() * x2 + b.get_value() * y2) * 100) / 100
             ], color=m.PINK))
+        l3 = v3.coordinate_label(integer_labels=False)
+        g3= m.VGroup(v3, l3)
         self.play(m.Create(v3), run_time=0.3)
+
+        self.play(m.Create(t1 := m.always_redraw(lambda: m.Text("{:.2f} ".format(a.get_value())).shift(m.DOWN * 3.2 + m.LEFT * 4))), run_time=0.2)
+        self.play(m.Create(t2 := m.MathTex(r"\begin{bmatrix} 0.8 \\ 0.5 \end{bmatrix} + ", color=m.BLUE).next_to(t1, m.RIGHT)), run_time=0.2)
+        self.play(m.Create(t3 := m.always_redraw(lambda: m.Text("{:.2f} ".format(b.get_value())).next_to(t2, m.RIGHT))), run_time=0.2)
+        self.play(m.Create(t4 := m.MathTex(r"\begin{bmatrix} 1 \\ 1.6 \end{bmatrix} = ", color=m.YELLOW).next_to(t3, m.RIGHT)), run_time=0.2)
+        self.play(m.Create(t5 := m.always_redraw(lambda: m.MathTex(r"\begin{bmatrix} " + 
+                            "{:.2f}".format(a.get_value() * 0.8 + b.get_value() * 1) + 
+                            r" \\ " + 
+                            "{:.2f}".format(a.get_value() * 0.5 + b.get_value() * 1.6) + 
+                            " \end{bmatrix} ", color=m.PINK).next_to(t4, m.RIGHT))), run_time=0.2)
 
         self.wait()
 
         self.play(b.animate.set_value(1.5))
         self.wait(0.5)
 
-        self.play(b.animate.set_value(-0.7))
+        self.play(b.animate.set_value(0.7))
         self.wait(0.5)
 
-        self.play(b.animate.set_value(-3))
+        self.play(b.animate.set_value(2))
         self.wait(0.5)
 
         self.play(b.animate.set_value(0))
         self.wait(0.5)
 
-        self.play(a.animate.set_value(-1.5), b.animate.set_value(-1.5))
+        self.play(a.animate.set_value(-1.5), b.animate.set_value(1.5))
         self.wait(0.5)
 
         self.play(a.animate.set_value(-3), b.animate.set_value(2))
         self.wait(0.5)
 
-        self.play(a.animate.set_value(-6), b.animate.set_value(3))
-        self.wait(0.5)
-
-        self.play(a.animate.set_value(10), b.animate.set_value(-4))
-        self.wait(0.5)
-
         self.play(a.animate.set_value(-4), b.animate.set_value(2))
-        self.wait(0.5)
-
         self.wait(2)
 
 
@@ -620,7 +632,7 @@ class VectorBasis(Scene_):
         v1 = m.always_redraw(lambda: m.Vector([
             int(a.get_value() * x1 * 100) / 100, 
             int(a.get_value() * x2 * 100) / 100
-            ]))
+            ], color=m.BLUE))
         self.play(m.Create(v1), run_time=0.3)
 
         v2 = m.always_redraw(lambda: m.Vector([
@@ -630,14 +642,26 @@ class VectorBasis(Scene_):
         self.play(m.Create(v2), run_time=0.3)
 
         text = m.always_redraw(lambda: 
-                m.Text("A = {:.2f}; B = {:.2f}".format(a.get_value(), b.get_value())).shift(m.UP * 3.5))
+                m.Text("A = {:.2f}; B = {:.2f}".format(a.get_value(), b.get_value())).shift(m.UP * 3.2))
         self.play(m.Write(text), run_time=0.3)
 
         v3 = m.always_redraw(lambda: m.Vector([
             int((a.get_value() * x1 + b.get_value() * y1) * 100) / 100, 
             int((a.get_value() * x2 + b.get_value() * y2) * 100) / 100
             ], color=m.PINK))
+        l3 = v3.coordinate_label(integer_labels=False)
+        g3= m.VGroup(v3, l3)
         self.play(m.Create(v3), run_time=0.3)
+
+        self.play(m.Create(t1 := m.always_redraw(lambda: m.Text("{:.2f} ".format(a.get_value())).shift(m.DOWN * 3.2 + m.LEFT * 4))), run_time=0.2)
+        self.play(m.Create(t2 := m.MathTex(r"\begin{bmatrix} 1 \\ 0 \end{bmatrix} + ", color=m.BLUE).next_to(t1, m.RIGHT)), run_time=0.2)
+        self.play(m.Create(t3 := m.always_redraw(lambda: m.Text("{:.2f} ".format(b.get_value())).next_to(t2, m.RIGHT))), run_time=0.2)
+        self.play(m.Create(t4 := m.MathTex(r"\begin{bmatrix} 0 \\ 1 \end{bmatrix} = ", color=m.YELLOW).next_to(t3, m.RIGHT)), run_time=0.2)
+        self.play(m.Create(t5 := m.always_redraw(lambda: m.MathTex(r"\begin{bmatrix} " + 
+                            "{:.2f}".format(a.get_value()) + 
+                            r" \\ " + 
+                            "{:.2f}".format(b.get_value()) + 
+                            " \end{bmatrix} ", color=m.PINK).next_to(t4, m.RIGHT))), run_time=0.2)
 
         self.wait()
 
@@ -1505,20 +1529,20 @@ if __name__ == '__main__':
     from pathlib import Path
 
     SCENES = [
-        # "VectorsExample",
-        # "VectorShift",
-        # "VectorsAsDots",
-        # "VectorsNDim",
+        "VectorsExample",
+        "VectorShift",
+        "VectorsAsDots",
+        "VectorsNDim",
         # "VectorScaling",
-        # "VectorSumTriangle",
-        #"VectorSumParallelogram",
+        "VectorSumTriangle",
+        "VectorSumParallelogram",
         # "VectorSumScaling",
-        # "VectorLinearCombine",
+        "VectorLinearCombine",
         # "VectorSumThree",
-        # "VectorBasis",
+        "VectorBasis",
         # "VectorLinearCombineCollinear",
         # "VectorLinearCombine23D",
-        #"AddFunction",
+        # "AddFunction",
         #"AddNotLinear",
         #"Square",
         #"LinearTransformExample",
@@ -1527,7 +1551,7 @@ if __name__ == '__main__':
         #"VectorDifference",
         #"ScalarProduct",
         #"OrthogonalVectors",
-        "VectorProjection",
+        # "VectorProjection",
   
     ]
     file_path = Path(__file__).resolve()
@@ -1536,4 +1560,9 @@ if __name__ == '__main__':
         # Генерация видео
         subprocess.run(["manim", str(file_path), SCENE, "-qh"])
         # Генерация последнего кадра
-        subprocess.run(["manim", str(file_path), SCENE, "-s"])
+        subprocess.run(["manim", str(file_path), SCENE, "-sqh"])
+
+        # # Генерация видео
+        # subprocess.run(["manim", str(file_path), SCENE, "-ql"])
+        # # Генерация последнего кадра
+        # subprocess.run(["manim", str(file_path), SCENE, "-sql"])

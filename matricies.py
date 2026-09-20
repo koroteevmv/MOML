@@ -167,7 +167,15 @@ class LTExample(LinearTransform):
             [1.5, -0.3],
             [0.5, 2.5]
         ]
-        self.apply_custom_matrix(matrix)
+        matrix = np.array(matrix).T
+
+        self.matrix_text = m.Matrix(matrix).scale(1).to_edge(m.UP, buff=1).to_edge(m.LEFT)
+        self.play(m.Create(self.matrix_text), run_time=0.3)
+        self.wait()
+
+        self.moving_mobjects = []
+        self.apply_matrix(matrix)
+        self.wait()
 
 class LTTranspose(LinearTransform):
     def construct(self):
@@ -311,15 +319,15 @@ class LT3D(ThreeDScene_):
 
         self.set_camera_orientation(phi=75 * m.DEGREES, theta=-45 * m.DEGREES)
 
-        # basis vectors i,j,k
-        basis_vector_helper = m.Tex(r"$i$", ",", r"$j$", ",", r"$k$")
-        basis_vector_helper[0].set_color(self.basis_i_color)
-        basis_vector_helper[2].set_color(self.basis_j_color)
-        basis_vector_helper[4].set_color(self.basis_k_color)
+        # # basis vectors i,j,k
+        # basis_vector_helper = m.Tex(r"$i$", ",", r"$j$", ",", r"$k$")
+        # basis_vector_helper[0].set_color(self.basis_i_color)
+        # basis_vector_helper[2].set_color(self.basis_j_color)
+        # basis_vector_helper[4].set_color(self.basis_k_color)
 
-        basis_vector_helper.to_corner(m.UP + m.RIGHT)
+        # basis_vector_helper.to_corner(m.UP + m.RIGHT)
 
-        self.add_fixed_in_frame_mobjects(basis_vector_helper)
+        # self.add_fixed_in_frame_mobjects(basis_vector_helper)
 
         # matrix
         matrix = self.create_matrix(M)
@@ -347,7 +355,7 @@ class LT3D(ThreeDScene_):
             m.GrowArrow(i_vec),
             m.GrowArrow(j_vec),
             m.GrowArrow(k_vec),
-            m.Write(basis_vector_helper)
+            # m.Write(basis_vector_helper)
         )
 
         self.wait()
@@ -906,14 +914,14 @@ class LT3D_Upper(ThreeDScene_):
 
 class LT3d22d(ThreeDScene_):
     def create_matrix(self, np_matrix):
-        m = m.Matrix(np_matrix[:2,:])
+        mat = m.Matrix(np_matrix[:2,:])
 
-        m.scale(0.75)
-        m.set_column_colors(self.basis_i_color, self.basis_j_color, self.basis_k_color)
+        mat.scale(0.75)
+        mat.set_column_colors(self.basis_i_color, self.basis_j_color, self.basis_k_color)
 
-        m.to_corner(m.UP + m.LEFT,buff=0.5)
+        mat.to_corner(m.UP + m.LEFT,buff=0.5)
 
-        return m
+        return mat
 
     def construct(self):
 
@@ -935,15 +943,15 @@ class LT3d22d(ThreeDScene_):
 
         self.set_camera_orientation(phi=75 * m.DEGREES, theta=-45 * m.DEGREES)
 
-        # basis vectors i,j,k
-        basis_vector_helper = m.Tex(r"$i$", ",", r"$j$", ",", r"$k$")
-        basis_vector_helper[0].set_color(self.basis_i_color)
-        basis_vector_helper[2].set_color(self.basis_j_color)
-        basis_vector_helper[4].set_color(self.basis_k_color)
+        # # basis vectors i,j,k
+        # basis_vector_helper = m.Tex(r"$i$", ",", r"$j$", ",", r"$k$")
+        # basis_vector_helper[0].set_color(self.basis_i_color)
+        # basis_vector_helper[2].set_color(self.basis_j_color)
+        # basis_vector_helper[4].set_color(self.basis_k_color)
 
-        basis_vector_helper.to_corner(m.UP + m.RIGHT)
+        # basis_vector_helper.to_corner(m.UP + m.RIGHT)
 
-        self.add_fixed_in_frame_mobjects(basis_vector_helper)
+        # self.add_fixed_in_frame_mobjects(basis_vector_helper)
 
         # matrix
         matrix = self.create_matrix(Mat)
@@ -976,7 +984,7 @@ class LT3d22d(ThreeDScene_):
             m.GrowArrow(j_vec),
             m.GrowArrow(k_vec),
             m.GrowArrow(x_vec),
-            m.Write(basis_vector_helper)
+            # m.Write(basis_vector_helper)
         )
 
         self.wait()
@@ -1018,12 +1026,12 @@ class LT3d22d(ThreeDScene_):
 
 class LT2d23d(ThreeDScene_):
     def create_matrix(self, np_matrix):
-        m = m.Matrix(np_matrix[:,:2])
+        mat = m.Matrix(np_matrix[:,:2])
 
-        m.scale(0.75)
-        m.set_column_colors(self.basis_i_color, self.basis_j_color, self.basis_k_color)
+        mat.scale(0.75)
+        mat.set_column_colors(self.basis_i_color, self.basis_j_color, self.basis_k_color)
 
-        m.to_corner(m.UP + m.LEFT,buff=0.5)
+        mat.to_corner(m.UP + m.LEFT,buff=0.5)
 
         return m
 
@@ -1096,7 +1104,7 @@ class LT2d23d(ThreeDScene_):
         self.add_fixed_orientation_mobjects(res_label)
 
         self.move_camera(phi=75 * m.DEGREES, theta=-90 * m.DEGREES, run_time=2)
-        self.begin_ambient_camera_rotation(rate=0.3)
+        self.begin_ambient_camera_rotation(rate=-0.3)
 
         self.wait(10)
 
@@ -2575,7 +2583,7 @@ class ReflectionMatrixScene(LinearTransformationScene_):
     def __init__(self, **kwargs):
         super().__init__(
             show_coordinates=True,
-            leave_ghost_vectors=False,
+            leave_ghost_vectors=True,
             show_basis_vectors=False,
             **kwargs
         )
@@ -2604,6 +2612,7 @@ class ReflectionMatrixScene(LinearTransformationScene_):
 
         # 3. Применяем преобразование
         # Сетка перевернется, вектор отразится относительно оси X
+        self.moving_mobjects = []
         self.apply_matrix(S)
         self.wait(1.5)
 
@@ -2675,7 +2684,7 @@ class PermutationMatrixScene(LinearTransformationScene_):
     def __init__(self, **kwargs):
         super().__init__(
             show_coordinates=True,
-            leave_ghost_vectors=False,
+            leave_ghost_vectors=True,
             show_basis_vectors=False,
             **kwargs
         )
@@ -2702,6 +2711,7 @@ class PermutationMatrixScene(LinearTransformationScene_):
 
         # 3. Анимация действия
         # Вектор перемещается из (2, 3) в (3, 2)
+        self.moving_mobjects = []
         self.apply_matrix(P)
         self.wait(1.5)
 
@@ -2847,7 +2857,7 @@ class UpperTriangularShearScene(LinearTransformationScene_):
     def __init__(self, **kwargs):
         super().__init__(
             show_coordinates=True,
-            leave_ghost_vectors=False,
+            leave_ghost_vectors=True,
             show_basis_vectors=False,
             **kwargs
         )
@@ -2875,6 +2885,7 @@ class UpperTriangularShearScene(LinearTransformationScene_):
 
         # Применяем преобразование
         # Вертикальная сетка останется вертикальной, горизонтальная наклонится
+        self.moving_mobjects = []
         self.apply_matrix(U)
         self.wait(1.5)
 
@@ -3053,15 +3064,9 @@ class SymmetricMatrixScene(m.Scene):
         caption = m.Text(
             "Симметричная матрица: растяжение вдоль ортогональных осей, без вращения",
             font_size=22, color=m.BLACK
-        ).to_edge(m.DOWN, buff=0.7)
+        ).to_edge(m.DOWN, buff=1)
         self.play(m.Write(caption))
         self.wait(3)
-
-        # 6. Очистка
-        self.play(m.FadeOut(m.VGroup(
-            plane_L, plane_R, circle_L, circle_R,
-            mat_L, mat_R, title_L, title_R, caption
-        )))
 
 class CovarianceEllipseScene(m.Scene):
     """10 Визуализация ковариационной матрицы через облако точек и эллипс рассеяния"""
@@ -3201,8 +3206,6 @@ class CovarianceEllipseScene(m.Scene):
         )
         self.wait(3)
 
-        self.play(m.FadeOut(*self.mobjects))
-
     def create_matrix(self, cov_matrix, color):
         """Вспомогательная функция для создания красивой матрицы"""
         mat = m.Matrix(
@@ -3233,6 +3236,7 @@ class MahalanobisDistanceScene(m.Scene):
         axes.set_color(m.BLACK)
         axes.add_coordinates()
         axes.coordinate_labels.set_color(m.BLACK)
+        axes.shift(m.LEFT * 2)
         self.add(axes)
         self.wait(0.5)
 
@@ -3291,7 +3295,7 @@ class MahalanobisDistanceScene(m.Scene):
             f"Евклидово: {euclid_dist:.2f}",
             color=m.RED,
             font_size=20
-        ).to_corner(m.UP + m.LEFT)
+        ).to_corner(m.UP + m.LEFT, buff=0.7)
         
         self.play(
             m.Create(dot_A), m.Create(dot_B),
@@ -3366,7 +3370,7 @@ class MahalanobisDistanceScene(m.Scene):
             f"Махаланобис: {mahal_dist:.2f}",
             color=m.GREEN,
             font_size=20
-        ).to_corner(m.UP + m.RIGHT)
+        ).to_corner(m.UP + m.RIGHT, buff=0.7)
         
         label_white = m.Text(
             "«Отбеленное» пространство:\nковариация = I",
@@ -3397,9 +3401,6 @@ class MahalanobisDistanceScene(m.Scene):
         
         self.play(m.Write(caption), run_time=2)
         self.wait(3)
-
-        # Очистка
-        self.play(m.FadeOut(*self.mobjects))
 
 class MahalanobisTwoPointsScene(m.Scene):
     """Анимация отбеливания: Евклидово расстояние между двумя точками превращается в расстояние Махаланобиса"""
@@ -3779,15 +3780,13 @@ class DegenerateMatrixScene(m.Scene):
         self.play(m.Write(caption))
         self.wait(3)
 
-        self.play(m.FadeOut(*self.mobjects))
-
 
 class EigenvectorScene(LinearTransformationScene_):
     """16 Демонстрация собственных векторов для матрицы [[2, 1], [0, 3]]"""
     def __init__(self, **kwargs):
         super().__init__(
             show_coordinates=True,
-            leave_ghost_vectors=False,
+            leave_ghost_vectors=True,
             show_basis_vectors=False,
             **kwargs
         )
@@ -3819,6 +3818,7 @@ class EigenvectorScene(LinearTransformationScene_):
         self.wait()
 
         # 4. Трансформация (LinearTransformationScene сама плавно анимирует все add_vector)
+        self.moving_mobjects = []
         self.apply_matrix(matrix)
         self.wait()
 
@@ -3947,10 +3947,6 @@ class EigenvalueCollapseScene(m.Scene):
         self.wait(0.5)
         self.play(m.Write(text2), run_time=1)
         self.wait(2)
-
-        plane.clear_updaters()
-        vectors.clear_updaters()
-        self.play(m.FadeOut(*self.mobjects))
 
 class EigenvalueInterpretationScene(m.Scene):
     """18 Геометрическая интерпретация разных значений """
@@ -4249,8 +4245,6 @@ class PCAPrincipalComponentScene(m.Scene):
             run_time=1
         )
         self.wait(3)
-        
-        self.play(m.FadeOut(*self.mobjects))
 
 class MatrixPowersScene(m.Scene):
     """Демонстрация степеней матрицы: рост и затухание собственных компонент"""
@@ -4520,31 +4514,31 @@ class MatrixVectorMultiplicationScene(LinearTransformationScene_):
         self.wait(3)
 
 if __name__ == '__main__':
-    import os
+    import subprocess
     from pathlib import Path
  
     SCENES = [
-        #"LTExample",
-        #"LT3D",
-        #"LT2d23d",
-        #"LT3d22d",
-        #"LT2d21d",
-        #"LT2d21dreversed",
-        #"MatrixMatrixMul2",
-        #"MatrixMatrixMulResult",
-        #"MatrixMatrixMulNotSymmetrical",
-        #"LT3D_scale1",
-        #"LT3D_scale2",
-        #"LT3D_scale2_down",
-        #"LT3D_scale2_reversed",
-        #"MatrixDeterminantScene",
-        #"LinearTransformExample",
-        #"DegenerateVolume3D",
-        #"MatrixDeterminantGeometry",
-        #"DeterminantVolumeScaling3D",
-        #"DeterminantVolumeScale",
-        #'MatrixVectorMult',
-        #'RotationPlane2D',
+        # "LTExample",
+        # "LT3D",
+        # "LT2d23d",
+        # "LT3d22d",
+        # "LT2d21d",
+        # "LT2d21dreversed",
+        # "MatrixMatrixMul2",
+        # "MatrixMatrixMulResult",
+        # "MatrixMatrixMulNotSymmetrical",
+        # "LT3D_scale1",
+        # "LT3D_scale2",
+        # "LT3D_scale2_down",
+        # "LT3D_scale2_reversed",
+        # "MatrixDeterminantScene",
+        # "LinearTransformExample",
+        # "DegenerateVolume3D",
+        # "MatrixDeterminantGeometry",
+        # "DeterminantVolumeScaling3D",
+        # "DeterminantVolumeScale",
+        # 'MatrixVectorMult',
+        # 'RotationPlane2D',
         # 'RotationCompositionScene',
         # 'ReflectionMatrixScene',
         # 'ReflectionLineScene',
@@ -4552,19 +4546,19 @@ if __name__ == '__main__':
         # 'Permutation3DScene',
         # 'UpperTriangularShearScene',
         # 'UpperTriangularScene',
-        # 'SymmetricMatrixScene',
-        # 'CovarianceEllipseScene',
+        'SymmetricMatrixScene',
+        'CovarianceEllipseScene',
         # 'MahalanobisTwoPointsScene',
+        # 'MahalanobisDistanceScene',
         # 'CovarianceRegularizationScene',
         # 'InverseMatrixScene',
         # 'RotationInverseScene',
         # 'DegenerateMatrixScene',
         # 'EigenvectorScene',
-        # 'EigenvalueCollapseScene',
+        'EigenvalueCollapseScene',
         # 'EigenvalueInterpretationScene2',
-        # "PCAPrincipalComponentScene",
-        "SpectralDecompositionScene",
-        #"MatrixPowersScene",
+        "PCAPrincipalComponentScene",
+        # "MatrixPowersScene",
         # 'MatrixVectorMul',
         # 'MatrixVectorMult',
         # 'MatrixVectorMultiplicationScene',
@@ -4572,5 +4566,12 @@ if __name__ == '__main__':
     file_path = Path(__file__).resolve()
 
     for SCENE in SCENES:
-        os.system(f"manim {Path(__file__).resolve()} {SCENE} -qh")
-        os.system(f"manim {Path(__file__).resolve()} {SCENE} -s")
+        # Генерация видео
+        subprocess.run(["manim", str(file_path), SCENE, "-qh"])
+        # Генерация последнего кадра
+        subprocess.run(["manim", str(file_path), SCENE, "-sqh"])
+
+        # # Генерация видео
+        # subprocess.run(["manim", str(file_path), SCENE, "-ql"])
+        # # Генерация последнего кадра
+        # subprocess.run(["manim", str(file_path), SCENE, "-sql"])

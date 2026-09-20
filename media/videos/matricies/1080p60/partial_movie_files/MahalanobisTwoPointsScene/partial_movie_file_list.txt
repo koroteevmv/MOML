@@ -1,8 +1,0 @@
-# This file is used internally by FFMPEG.
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/767850006_4030076791_238358334.mp4'
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/2422982351_548731573_480767404.mp4'
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/2422982351_2580986127_261881374.mp4'
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/2422982351_2840115676_1372194059.mp4'
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/2422982351_3346074885_1480932121.mp4'
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/2422982351_3977570802_1911738147.mp4'
-file 'file:/home/koroteeev/projects/MOML/media/videos/matricies/1080p60/partial_movie_files/MahalanobisTwoPointsScene/2422982351_3879069619_970411027.mp4'

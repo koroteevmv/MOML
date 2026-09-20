@@ -26,6 +26,12 @@ class ThreeDScene_(m.ThreeDScene):
         apply_theme(manim_scene=self, theme_name=theme)
         apply_colors()
 
+class MovingCameraScene_(m.MovingCameraScene):
+    def setup(self):
+        theme = "Apple System Colors Light"
+        apply_theme(manim_scene=self, theme_name=theme)
+        apply_colors()
+
 class LinearTransformationScene_(m.LinearTransformationScene):
     def __init__(self, **kwargs):
         m.LinearTransformationScene.__init__(
